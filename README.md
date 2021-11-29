@@ -1,4 +1,5 @@
 The Chocolate Factory
 =====================
 
-Will migrate official home from shed.
+Formerly homed at https://rosuav.github.io/shed/chocfactory.js and still
+available from that location.
