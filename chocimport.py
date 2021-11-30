@@ -30,6 +30,10 @@ Additional idioms to detect:
 import sys
 import esprima # ImportError? pip install -r requirements.txt
 
+autoimport_line = -1 # If we find "//autoimport" at the end of a line, any declaration surrounding that will be edited.
+autoimport_start = autoimport_end = -1
+got_imports, want_imports = [], []
+
 elements = { }
 def element(f):
 	if f.__doc__:
@@ -120,7 +124,7 @@ def Call(el, scopes, sc):
 				descend(defn, scopes[:1], "return")
 				return
 		if funcname.isupper():
-			print("GOT A CHOC CALL:", el.callee.name)
+			want_imports.append(funcname)
 
 @element
 def ReturnStatement(el, scopes, sc):
@@ -171,13 +175,21 @@ def Binary(el, scopes, sc):
 	descend(el.left, scopes, sc)
 	descend(el.right, scopes, sc)
 
-# TODO: Any assignment, add it to the appropriate scope (if declaration, the latest)
-# Don't worry about subscoping within a function
-# All additions are some_scope.setdefault(name, []).append(el)
 @element
 def VariableDeclaration(el, scopes, sc):
+	ai = el.loc.start.line <= autoimport_line and el.loc.end.line >= autoimport_line
+	if ai:
+		global autoimport_start; autoimport_start = el.loc.start.line
+		global autoimport_end; autoimport_end = el.loc.end.line
 	for decl in el.declarations:
 		if decl.init:
+			if ai and decl.init.type == "Identifier" and decl.init.name == "choc":
+				# It's the import destructuring line.
+				if decl.id.type != "ObjectPattern": continue # Or maybe not destructuring. Whatever, you do you.
+				for prop in decl.id.properties:
+					if prop.key.type == "Identifier" and prop.key.name.isupper():
+						got_imports.append(prop.key.name)
+				continue
 			scopes[-1].setdefault(decl.id.name, []).append(decl.init)
 
 @element
@@ -200,7 +212,7 @@ def process(fn):
 	with open(fn) as f: data = f.read()
 	data = """
 	import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
-	const {FORM, LABEL, INPUT} = choc;
+	const {FORM, LABEL, INPUT} = choc; //autoimport
 	const f1 = () => {HP()}, f2 = () => PRE(), f3 = () => {return B("bold");};
 	let f4 = "test";
 	function update() {
@@ -212,6 +224,10 @@ def process(fn):
 	"""
 	module = esprima.parseModule(data, {"loc": True})
 	global source_lines; source_lines = data.split("\n")
+	for i, line in enumerate(source_lines):
+		if line.strip().endswith("autoimport"):
+			global autoimport_line; autoimport_line = i + 1
+			break
 	# First pass: Collect top-level function declarations (the ones that get hoisted)
 	scope = { }
 	for el in module.body:
@@ -222,6 +238,15 @@ def process(fn):
 		if el.type == "FunctionDeclaration" and el.id: scope[el.id.name] = [el]
 	# Second pass: Recursively look for all set_content calls.
 	descend(module.body, (scope,), "")
+	want_imports.sort()
+	print("GOT:", got_imports)
+	print("WANT:", want_imports)
+	if want_imports != got_imports:
+		source_lines[autoimport_start - 1 : autoimport_end] = [
+			"const {" + ", ".join(want_imports) + "} = choc;"
+		]
+		print("\n".join(source_lines))
+		# TODO: Write-back if the user wants it
 
 if __name__ == "__main__":
 	if len(sys.argv) == 1:
