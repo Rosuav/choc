@@ -166,8 +166,19 @@ def VariableDeclaration(el, scopes, sc):
 
 @element
 def AssignmentExpression(el, scopes, sc):
-	print("Assigning to", el.left.type)
-	# As per declarations
+	if el.left.type != "Identifier": return
+	# Assigning to a simple name stashes the expression in the appropriate scope.
+	# NOTE: In some situations, an assignment "further down" than the corresponding set_content
+	# call may be missed. This is lexical analysis, not control-flow analysis.
+	# Note also that this treats augmented assignment the same as assignment, collecting all
+	# relevant expressions together.
+	name = el.left.name
+	for scope in reversed(scopes):
+		if name in scope:
+			scope[name].append(el.right)
+			return
+	# If we didn't find anything to assign to, it's probably landing at top-level. Warn?
+	scopes[0][name] = [el.right]
 
 def process(fn):
 	with open(fn) as f: data = f.read()
