@@ -22,7 +22,7 @@ possible styles of usage:
    - Would require a parameter to say "analyze exported function named X"
 
 """
-
+import sys
 import esprima # ImportError? pip install -r requirements.txt
 
 elements = { }
@@ -196,7 +196,6 @@ def process(fn):
 	descend(module, ())
 
 if __name__ == "__main__":
-	import sys
 	if len(sys.argv) == 1:
 		print("USAGE: python3 %s fn [fn...]", file=sys.stderr)
 		print("Will audit Choc Factory imports for those files.")
