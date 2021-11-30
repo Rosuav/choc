@@ -61,7 +61,7 @@ def BodyDescender(el, scopes):
 @element
 def Ignore(el, scopes):
 	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement ThrowStatement UpdateExpression
-	MemberExpression ImportExpression TemplateExpression"""
+	MemberExpression ImportExpression TemplateExpression ContinueStatement BreakStatement"""
 	# I assume that template strings will be used only for strings, not for DOM elements.
 
 @element
@@ -82,7 +82,7 @@ def Identifier(el, scopes):
 
 @element
 def CallExpression(el, scopes):
-	descend(el.arguments, scopes)
+	descend(el.arguments, scopes) # Assume a function's arguments can be incorporated into its return value
 	if el.callee.type == "Identifier": funcname = el.callee.name
 	else: return # For now, I'm ignoring any x.y() or x()() or anything
 	if funcname == "set_content":
@@ -93,13 +93,13 @@ def CallExpression(el, scopes):
 			print("Extra arguments to set_content - did you intend to pass an array?", file=sys.stderr)
 			print(source_lines[el.loc.start.line - 1], file=sys.stderr)
 	if "set_content" in scopes:
-		if funcname.isupper():
-			print("GOT A CHOC CALL:", el.callee.name)
 		if funcname in functions:
 			# Descend into the function (but only once, since this is static
 			# analysis). Note that the current scopes do NOT apply - we use the
 			# top-level scope only, since functions in this mapping are top-levels.
 			descend(functions.pop(funcname), (scopes[0], "set_content"))
+		elif funcname.isupper():
+			print("GOT A CHOC CALL:", el.callee.name)
 
 @element
 def ExpressionStatement(el, scopes): descend(el.expression, scopes)
