@@ -70,13 +70,13 @@ def ImportDeclaration(el, scopes, sc):
 
 @element
 def Identifier(el, scopes, sc):
-	if sc:
+	if sc == "set_content":
 		while scopes:
 			*scopes, scope = scopes
 			if el.name in scope:
 				defn = scope[el.name]
 				scope[el.name] = [] # Only enter it once
-				descend(defn, (*scopes, scope), True)
+				descend(defn, (*scopes, scope), sc)
 				break
 
 @element
@@ -88,18 +88,23 @@ def Call(el, scopes, sc):
 	if funcname == "set_content":
 		# Alright! We're setting content. First arg is the target, second is the content.
 		if len(el.arguments) < 2: return # Huh. Need two args. Whatever.
-		descend(el.arguments[1], scopes, True)
+		descend(el.arguments[1], scopes, "set_content")
 		if len(el.arguments) > 2:
 			print("Extra arguments to set_content - did you intend to pass an array?", file=sys.stderr)
 			print(source_lines[el.loc.start.line - 1], file=sys.stderr)
-	if sc:
+	if sc == "set_content":
 		if funcname in functions:
 			# Descend into the function (but only once, since this is static
 			# analysis). Note that the current scopes do NOT apply - we use the
 			# top-level scope only, since functions in this mapping are top-levels.
-			descend(functions.pop(funcname), scopes[:1], True)
+			descend(functions.pop(funcname), scopes[:1], "return")
 		elif funcname.isupper():
 			print("GOT A CHOC CALL:", el.callee.name)
+
+@element
+def ReturnStatement(el, scopes, sc):
+	if sc == "return": sc = "set_content"
+	descend(el.expression, scopes, sc)
 
 @element
 def ExpressionStatement(el, scopes, sc):
@@ -188,7 +193,7 @@ def process(fn):
 					functions[decl.id.name] = decl.init
 		# Note that reassigning to a variable won't trigger this currently.
 	# Second pass: Recursively look for all set_content calls.
-	descend(module, (), False)
+	descend(module, (), "")
 
 if __name__ == "__main__":
 	if len(sys.argv) == 1:
