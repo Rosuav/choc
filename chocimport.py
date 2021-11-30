@@ -32,7 +32,7 @@ import esprima # ImportError? pip install -r requirements.txt
 
 autoimport_line = -1 # If we find "//autoimport" at the end of a line, any declaration surrounding that will be edited.
 autoimport_start = autoimport_end = -1
-got_imports, want_imports = [], []
+got_imports, want_imports = [], set()
 
 elements = { }
 def element(f):
@@ -140,7 +140,7 @@ def Call(el, scopes, sc):
 				descend(defn, scopes[:1], "return")
 				return
 		if funcname.isupper():
-			want_imports.append(funcname)
+			want_imports.add(funcname)
 
 @element
 def ReturnStatement(el, scopes, sc):
@@ -255,12 +255,12 @@ def process(fn):
 		if el.type == "FunctionDeclaration" and el.id: scope[el.id.name] = [el]
 	# Second pass: Recursively look for all set_content calls.
 	descend(module.body, (scope,), "")
-	want_imports.sort()
+	want = sorted(want_imports)
 	print("GOT:", got_imports)
-	print("WANT:", want_imports)
-	if want_imports != got_imports and autoimport_line != -1:
+	print("WANT:", want)
+	if want != got_imports and autoimport_line != -1:
 		source_lines[autoimport_start - 1 : autoimport_end] = [
-			"const {" + ", ".join(want_imports) + "} = choc;"
+			"const {" + ", ".join(want) + "} = choc;"
 		]
 		print("\n".join(source_lines))
 		# TODO: Write-back if the user wants it
