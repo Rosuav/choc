@@ -126,6 +126,18 @@ def Call(el, scopes, sc):
 			# stuff.map(e => ...) is effectively a call to that function.
 			if sc == "set_content" and el.arguments: sc = "return"
 			descend(el.arguments[0], scopes, sc)
+		elif c.property.name in ("push", "unshift"):
+			# Adding to an array is adding code to the definition of the array.
+			# For static analysis, we consider both of these to have multiple code
+			# blocks associated with them:
+			# let x = []; x.push(P("hi")); x.push(DIV("hi"))
+			# let y; if (cond) y = P("hi"); else y = DIV("hi")
+			if c.object.type == "Identifier":
+				name = c.object.name
+				for scope in reversed(scopes):
+					if name in scope:
+						scope[name].append(el.arguments)
+						return
 		return
 	else: return # For now, I'm ignoring any unrecognized x.y() or x()() or anything
 	if funcname == "set_content":
@@ -261,6 +273,7 @@ def process(fn):
 		if el.type == "FunctionDeclaration" and el.id: scope[el.id.name] = [el]
 	# Second pass: Recursively look for all set_content calls.
 	descend(module.body, (scope,), "")
+	got_imports.sort()
 	want = sorted(want_imports)
 	print("GOT:", got_imports)
 	print("WANT:", want)
