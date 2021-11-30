@@ -25,9 +25,74 @@ possible styles of usage:
 
 import esprima # ImportError? pip install -r requirements.txt
 
+elements = { }
+def element(f):
+	if f.__doc__:
+		for name in f.__doc__.split(): elements[name] = f
+	else:
+		elements[f.__name__] = f
+	return f
+
+def descend(el, scopes):
+	if not el: return
+	if isinstance(el, list):
+		for el in el: descend(el, scopes)
+		return
+	f = elements.get(el.type)
+	if f: f(el, scopes)
+	else:
+		print("Unknown type:", el.type)
+		elements[el.type] = lambda el, scopes: None
+
+# Recursive AST descent handlers
+# Each one receives the current element and a tuple of current scopes
+
+@element
+def NewScope(el, scopes):
+	"""Program FunctionDeclaration ArrowFunctionExpression FunctionExpression"""
+	descend(el.body, scopes + ({ },))
+
+@element
+def BodyDescender(el, scopes):
+	"""BlockStatement LabeledStatement WhileStatement DoWhileStatement ForStatement ForInStatement CatchClause"""
+	descend(el.body, scopes)
+
+@element
+def CallExpression(el, scopes):
+	print("Function call!", el)
+
+@element
+def ExpressionStatement(el, scopes): descend(el.expression, scopes)
+
 def process(fn):
 	with open(fn) as f: data = f.read()
-	print(esprima.parseModule(data))
+	# module = esprima.parseModule(data)
+	module = esprima.parseModule("""
+	//import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
+	//const {FORM, LABEL, INPUT} = choc;
+	function update() {
+		//let el = FORM(LABEL(["Speak thy mind:", INPUT({name: "thought"})]))
+		set_content("main", el)
+	}
+	""")
+	# First pass: Collect top-level functions
+	functions = { }
+	for el in module.body:
+		# Anything exported, just look at the base thing
+		if el.type in ("ExportNamedDeclaration", "ExportDefaultDeclaration"):
+			el = el.declaration
+
+		# function func(x) {y}
+		if el.type == "FunctionDeclaration": functions[el.id.name] = el
+		# const func = x => y
+		# const func = function (x) {y}
+		if el.type == "VariableDeclaration":
+			for decl in el.declarations:
+				if decl.init and decl.init.type in ("ArrowFunctionExpression", "FunctionExpression"):
+					functions[decl.id.name] = decl.init
+		# Note that reassigning to a variable won't trigger this currently.
+	# Second pass: Recursively look for all set_content calls.
+	descend(module, ())
 
 if __name__ == "__main__":
 	import sys
