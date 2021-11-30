@@ -104,7 +104,7 @@ def ImportSpec(el, scopes, sc):
 
 @element
 def Identifier(el, scopes, sc):
-	if sc == "set_content":
+	if sc in ("set_content", "return"):
 		while scopes:
 			*scopes, scope = scopes
 			if el.name in scope:
@@ -126,7 +126,7 @@ def Call(el, scopes, sc):
 			descend(el.arguments, scopes, "set_content")
 		elif c.property.name == "map":
 			# stuff.map(e => ...) is effectively a call to that function.
-			if sc == "set_content" and el.arguments: sc = "return"
+			if sc == "set_content": sc = "return"
 			descend(el.arguments[0], scopes, sc)
 		elif c.property.name in ("push", "unshift"):
 			# Adding to an array is adding code to the definition of the array.
@@ -224,6 +224,8 @@ def VariableDeclaration(el, scopes, sc):
 					if prop.key.type == "Identifier" and prop.key.name.isupper():
 						got_imports.append(prop.key.name)
 				continue
+			# Descend into it, looking for functions; also save it in case it's used later.
+			descend(decl.init, scopes, sc)
 			scopes[-1].setdefault(decl.id.name, []).append(decl.init)
 
 @element
