@@ -92,7 +92,13 @@ def Export(el, scopes, sc):
 
 @element
 def ImportDeclaration(el, scopes, sc):
-	pass # Optionally check that Choc Factory has indeed been imported, and skip the file if not?
+	# Optionally check that Choc Factory has indeed been imported, and skip the file if not?
+	descend(el.specifiers, scopes, sc)
+
+@element
+def ImportSpec(el, scopes, sc):
+	"""ImportSpecifier ImportDefaultSpecifier"""
+	scopes[-1].setdefault(el.local.name, []) # Mark that it's a known variable but don't attach any code to it
 
 @element
 def Identifier(el, scopes, sc):
