@@ -68,7 +68,7 @@ def ArrowFunctionExpression(el, scopes, sc):
 
 @element
 def FunctionDeclaration(el, scopes, sc):
-	if sc != "return" and el.id: scopes[-1].setdefault(el.id.name).append(el)
+	if sc != "return" and el.id: scopes[-1].setdefault(el.id.name, []).append(el)
 	FunctionExpression(el, scopes, sc)
 
 @element
