@@ -29,7 +29,7 @@ import sys
 import esprima # ImportError? pip install -r requirements.txt
 
 autoimport_line = -1 # If we find "//autoimport" at the end of a line, any declaration surrounding that will be edited.
-autoimport_start = autoimport_end = -1
+autoimport_range = None
 got_imports, want_imports = [], set()
 
 elements = { }
@@ -214,8 +214,7 @@ def Binary(el, scopes, sc):
 @element
 def VariableDeclaration(el, scopes, sc):
 	if el.loc.start.line <= autoimport_line and el.loc.end.line >= autoimport_line:
-		global autoimport_start; autoimport_start = el.loc.start.line
-		global autoimport_end; autoimport_end = el.loc.end.line
+		global autoimport_range; autoimport_range = el.range
 	for decl in el.declarations:
 		if decl.init:
 			if decl.init.type == "Identifier" and decl.init.name == "choc":
@@ -258,7 +257,7 @@ def process(fn):
 	f4 = () => DIV(); //Won't be found (violates DBU)
 	function f5() {return SPAN();}
 	"""
-	module = esprima.parseModule(data, {"loc": True})
+	module = esprima.parseModule(data, {"loc": True, "range": True})
 	global source_lines; source_lines = data.split("\n")
 	for i, line in enumerate(source_lines):
 		if line.strip().endswith("autoimport"):
@@ -283,11 +282,10 @@ def process(fn):
 		print(fn)
 		print("GOT:", got_imports)
 		print("WANT:", want)
-		if autoimport_line != -1:
-			source_lines[autoimport_start - 1 : autoimport_end] = [
-				"const {" + ", ".join(want) + "} = choc;"
-			]
-			print("\n".join(source_lines))
+		if autoimport_range:
+			start, end = autoimport_range
+			data = data[:start] + "const {" + ", ".join(want) + "} = choc;" + data[end:]
+			print(data)
 			# TODO: Write-back if the user wants it
 
 if __name__ == "__main__":
