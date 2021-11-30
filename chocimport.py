@@ -54,12 +54,19 @@ def NewScope(el, scopes):
 
 @element
 def BodyDescender(el, scopes):
-	"""BlockStatement LabeledStatement WhileStatement DoWhileStatement ForStatement ForInStatement CatchClause"""
+	"""BlockStatement LabeledStatement WhileStatement DoWhileStatement CatchClause
+	ForStatement ForInStatement ForOfStatement"""
 	descend(el.body, scopes)
 
 @element
 def Ignore(el, scopes):
-	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement ThrowStatement UpdateExpression MemberExpression"""
+	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement ThrowStatement UpdateExpression
+	MemberExpression ImportExpression TemplateExpression"""
+	# I assume that template strings will be used only for strings, not for DOM elements.
+
+@element
+def ImportDeclaration(el, scopes):
+	pass # Optionally check that Choc Factory has indeed been imported, and skip the file if not?
 
 @element
 def Identifier(el, scopes):
@@ -125,7 +132,8 @@ def ObjectExpression(el, scopes):
 	pass
 
 @element
-def UnaryExpression(el, scopes):
+def Unary(el, scopes):
+	"""UnaryExpression AwaitExpression SpreadExpression YieldExpression"""
 	descend(el.argument, scopes)
 
 @element
@@ -157,8 +165,8 @@ def AssignmentExpression(el, scopes):
 def process(fn):
 	with open(fn) as f: data = f.read()
 	data = """
-	//import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
-	//const {FORM, LABEL, INPUT} = choc;
+	import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
+	const {FORM, LABEL, INPUT} = choc;
 	function update() {
 		let el = FORM(LABEL(["Speak thy mind:", INPUT({name: "thought"})]))
 		set_content("main", el)
