@@ -24,7 +24,7 @@ possible styles of usage:
 Additional idioms to detect:
 1) const arr = []; arr.push(LI())
 2) const arr = stuff.map(thing => LI(thing.name))
-3) elem.appendChild(LI())
+3) elem.appendChild(LI()) -- working
 4) Top-level set_content calls
 """
 import sys
@@ -110,7 +110,18 @@ def Call(el, scopes, sc):
 	"""CallExpression NewExpression"""
 	descend(el.arguments, scopes, sc) # Assume a function's arguments can be incorporated into its return value
 	if el.callee.type == "Identifier": funcname = el.callee.name
-	else: return # For now, I'm ignoring any x.y() or x()() or anything
+	elif el.callee.type == "MemberExpression":
+		c = el.callee
+		descend(c.object, scopes, sc) # "foo(...).spam()" starts out by calling "foo(...)"
+		if c.computed: descend(c.property, scopes, sc) # "foo[x]()" starts out by evaluating x
+		elif c.property.name == "appendChild": # elem.appendChild counts as DOM work
+			descend(el.arguments, scopes, "set_content")
+		elif c.property.name == "map":
+			# stuff.map(e => ...) is effectively a call to that function.
+			if sc == "set_content" and el.arguments: sc = "return"
+			descend(el.arguments[0], scopes, sc)
+		return
+	else: return # For now, I'm ignoring any unrecognized x.y() or x()() or anything
 	if funcname == "set_content":
 		# Alright! We're setting content. First arg is the target, second is the content.
 		if len(el.arguments) < 2: return # Huh. Need two args. Whatever.
@@ -182,13 +193,12 @@ def Binary(el, scopes, sc):
 
 @element
 def VariableDeclaration(el, scopes, sc):
-	ai = el.loc.start.line <= autoimport_line and el.loc.end.line >= autoimport_line
-	if ai:
+	if el.loc.start.line <= autoimport_line and el.loc.end.line >= autoimport_line:
 		global autoimport_start; autoimport_start = el.loc.start.line
 		global autoimport_end; autoimport_end = el.loc.end.line
 	for decl in el.declarations:
 		if decl.init:
-			if ai and decl.init.type == "Identifier" and decl.init.name == "choc":
+			if decl.init.type == "Identifier" and decl.init.name == "choc":
 				# It's the import destructuring line.
 				if decl.id.type != "ObjectPattern": continue # Or maybe not destructuring. Whatever, you do you.
 				for prop in decl.id.properties:
@@ -248,7 +258,7 @@ def process(fn):
 	want_imports.sort()
 	print("GOT:", got_imports)
 	print("WANT:", want_imports)
-	if want_imports != got_imports:
+	if want_imports != got_imports and autoimport_line != -1:
 		source_lines[autoimport_start - 1 : autoimport_end] = [
 			"const {" + ", ".join(want_imports) + "} = choc;"
 		]
