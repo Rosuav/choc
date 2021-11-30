@@ -25,9 +25,6 @@ possible styles of usage:
 
 import esprima # ImportError? pip install -r requirements.txt
 
-def find_chocolate(el):
-	"""TODO"""
-
 elements = { }
 def element(f):
 	if f.__doc__:
@@ -61,18 +58,46 @@ def BodyDescender(el, scopes):
 	descend(el.body, scopes)
 
 @element
+def Ignore(el, scopes):
+	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement"""
+
+@element
+def Identifier(el, scopes):
+	if "set_content" in scopes:
+		for scope in reversed(scopes):
+			if scope != "set_content" and el.name in scope:
+				defn = scope[el.name]
+				scope[el.name] = [] # Only enter it once
+				descend(defn)
+				break
+
+@element
 def CallExpression(el, scopes):
-	print("Function call!", el)
-	if el.callee.type == "Identifier" and el.callee.name == "set_content":
-		# Alright! We're setting content.
-		if len(el.arguments) < 2: return # Huh. Need two args though.
-		find_chocolate(el.arguments[1])
+	descend(el.arguments, scopes)
+	if el.callee.type == "Identifier": funcname = el.callee.name
+	else: return # For now, I'm ignoring any x.y() or x()() or anything
+	if funcname == "set_content":
+		# Alright! We're setting content. First arg is the target, second is the content.
+		if len(el.arguments) < 2: return # Huh. Need two args. Whatever.
+		descend(el.arguments[1], scopes + ("set_content",))
 		if len(el.arguments) > 2:
 			print("Extra arguments to set_content - did you intend to pass an array?", file=sys.stderr)
 			print(source_lines[el.loc.start.line - 1])
+	if "set_content" in scopes:
+		if funcname.isupper():
+			print("GOT A CHOC CALL:", el.callee.name)
+		if funcname in functions:
+			# Descend into the function (but only once, since this is static
+			# analysis). Note that the current scopes do NOT apply - we use the
+			# top-level scope only, since functions in this mapping are top-levels.
+			descend(functions.pop(funcname), scopes[:1] + ("set_content",))
 
 @element
 def ExpressionStatement(el, scopes): descend(el.expression, scopes)
+
+# TODO: Any assignment, add it to the appropriate scope (if declaration, the latest)
+# Don't worry about subscoping within a function
+# All additions are some_scope.setdefault(name, []).append(el)
 
 def process(fn):
 	with open(fn) as f: data = f.read()
@@ -80,7 +105,7 @@ def process(fn):
 	//import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
 	//const {FORM, LABEL, INPUT} = choc;
 	function update() {
-		//let el = FORM(LABEL(["Speak thy mind:", INPUT({name: "thought"})]))
+		let el = FORM(LABEL(["Speak thy mind:", INPUT({name: "thought"})]))
 		set_content("main", el)
 	}
 	"""
