@@ -228,7 +228,9 @@ def VariableDeclaration(el, scopes, sc):
 
 @element
 def AssignmentExpression(el, scopes, sc):
-	if el.left.type != "Identifier": return
+	descend(el.left, scopes, sc)
+	descend(el.right, scopes, sc)
+	if el.left.type != "Identifier" or sc == "set_content": return
 	# Assigning to a simple name stashes the expression in the appropriate scope.
 	# NOTE: In some situations, an assignment "further down" than the corresponding set_content
 	# call may be missed. This is lexical analysis, not control-flow analysis.
