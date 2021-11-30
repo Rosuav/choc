@@ -275,6 +275,7 @@ def process(fn):
 	if "render_item" in scope: descend(scope["render_item"], (scope,), "return")
 	got_imports.sort()
 	want = sorted(want_imports)
+	print(fn)
 	print("GOT:", got_imports)
 	print("WANT:", want)
 	if want != got_imports and autoimport_line != -1:
@@ -289,4 +290,6 @@ if __name__ == "__main__":
 		print("USAGE: python3 %s fn [fn...]", file=sys.stderr)
 		print("Will audit Choc Factory imports for those files.")
 		# TODO: option to autofix
-	for fn in sys.argv[1:]: process(fn)
+	for fn in sys.argv[1:]:
+		autoimport_line, got_imports, want_imports = -1, [], set()
+		process(fn)
