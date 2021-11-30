@@ -59,7 +59,7 @@ def BodyDescender(el, scopes):
 
 @element
 def Ignore(el, scopes):
-	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement"""
+	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement ThrowStatement UpdateExpression MemberExpression"""
 
 @element
 def Identifier(el, scopes):
@@ -68,7 +68,7 @@ def Identifier(el, scopes):
 			if scope != "set_content" and el.name in scope:
 				defn = scope[el.name]
 				scope[el.name] = [] # Only enter it once
-				descend(defn)
+				descend(defn, scopes) # TODO: Use only the scopes that that identifier was defined in
 				break
 
 @element
@@ -95,9 +95,64 @@ def CallExpression(el, scopes):
 @element
 def ExpressionStatement(el, scopes): descend(el.expression, scopes)
 
+@element
+def If(el, scopes):
+	"""IfStatement ConditionalExpression"""
+	descend(el.consequent, scopes)
+	descend(el.alternate, scopes)
+
+@element
+def SwitchStatement(el, scopes):
+	descend(el.cases, scopes)
+@element
+def SwitchCase(el, scopes):
+	descend(el.consequent, scopes)
+
+@element
+def TryStatement(el, scopes):
+	descend(el.block, scopes)
+	descend(el.handler, scopes)
+	descend(el.finalizer, scopes)
+
+@element
+def ArrayExpression(el, scopes):
+	descend(el.elements, scopes)
+
+@element
+def ObjectExpression(el, scopes):
+	# Not sure what contexts this would make sense in. Figure it out, then add
+	# descend calls accordingly.
+	pass
+
+@element
+def UnaryExpression(el, scopes):
+	descend(el.argument, scopes)
+
+@element
+def Binary(el, scopes):
+	"""BinaryExpression LogicalExpression"""
+	descend(el.left, scopes)
+	descend(el.right, scopes)
+
 # TODO: Any assignment, add it to the appropriate scope (if declaration, the latest)
 # Don't worry about subscoping within a function
 # All additions are some_scope.setdefault(name, []).append(el)
+@element
+def VariableDeclaration(el, scopes):
+	for scope in reversed(scopes):
+		if scope != "set_content": break
+	else: return # uhh shouldn't happen, the top level should always be a real scope
+	for decl in el.declarations:
+		if decl.init:
+			scope.setdefault(decl.id.name, []).append(decl.init)
+
+@element
+def AssignmentExpression(el, scopes):
+	for scope in reversed(scopes):
+		if scope != "set_content": break
+	else: return # uhh shouldn't happen, the top level should always be a real scope
+	print("Assigning to", el.left)
+	# As per declarations
 
 def process(fn):
 	with open(fn) as f: data = f.read()
@@ -112,7 +167,7 @@ def process(fn):
 	module = esprima.parseModule(data, {"loc": True})
 	global source_lines; source_lines = data.split("\n")
 	# First pass: Collect top-level functions
-	functions = { }
+	global functions; functions = { }
 	for el in module.body:
 		# Anything exported, just look at the base thing
 		if el.type in ("ExportNamedDeclaration", "ExportDefaultDeclaration"):
