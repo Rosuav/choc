@@ -91,7 +91,7 @@ def CallExpression(el, scopes):
 		descend(el.arguments[1], scopes + ("set_content",))
 		if len(el.arguments) > 2:
 			print("Extra arguments to set_content - did you intend to pass an array?", file=sys.stderr)
-			print(source_lines[el.loc.start.line - 1])
+			print(source_lines[el.loc.start.line - 1], file=sys.stderr)
 	if "set_content" in scopes:
 		if funcname.isupper():
 			print("GOT A CHOC CALL:", el.callee.name)
