@@ -214,8 +214,9 @@ def AssignmentExpression(el, scopes, sc):
 	scopes[0][name] = [el.right]
 
 def process(fn):
-	with open(fn) as f: data = f.read()
-	data = """
+	if fn != "-":
+		with open(fn) as f: data = f.read()
+	else: data = """
 	import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
 	const {FORM, LABEL, INPUT} = choc; //autoimport
 	const f1 = () => {HP()}, f2 = () => PRE(), f3 = () => {return B("bold");};
