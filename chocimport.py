@@ -11,7 +11,7 @@ set_content("main", FORM(LABEL([B("Name: "), INPUT({name: "name"})])))
 And it will update the import to add the B.
 
 This is very primitive static analysis and can recognize only a small set of
-possible styles of usage:
+possible styles of usage, but the most common ones:
 
 1) Direct usage, see above. Element name must be all-caps.
 2) set_content("main", thing()); function thing() {return FORM(...);}
@@ -20,12 +20,10 @@ possible styles of usage:
    - can handle any assignment within scope including declarations
 4) TODO: export function make_content() {return B("hello")}
    - Would require a parameter to say "analyze exported function named X"
-
-Additional idioms to detect:
-1) const arr = []; arr.push(LI())
-2) const arr = stuff.map(thing => LI(thing.name))
-3) elem.appendChild(LI()) -- working
-4) Top-level set_content calls
+   - Currently hacked in for render_item() for StilleBot
+5) const arr = []; arr.push(LI()); set_content(thing, arr)
+6) const arr = stuff.map(thing => LI(thing.name)); set_content(thing, arr)
+7) DOM("#foo").appendChild(LI())
 """
 import sys
 import esprima # ImportError? pip install -r requirements.txt
@@ -273,6 +271,8 @@ def process(fn):
 		if el.type == "FunctionDeclaration" and el.id: scope[el.id.name] = [el]
 	# Second pass: Recursively look for all set_content calls.
 	descend(module.body, (scope,), "")
+	# HACK: An exported render_item function returns DOM elements.
+	if "render_item" in scope: descend(scope["render_item"], (scope,), "return")
 	got_imports.sort()
 	want = sorted(want_imports)
 	print("GOT:", got_imports)
