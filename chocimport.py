@@ -86,6 +86,11 @@ def Ignore(el, scopes, sc):
 	# I assume that template strings will be used only for strings, not for DOM elements.
 
 @element
+def Export(el, scopes, sc):
+	"""ExportNamedDeclaration ExportDefaultDeclaration"""
+	descend(el.declaration, scopes, sc)
+
+@element
 def ImportDeclaration(el, scopes, sc):
 	pass # Optionally check that Choc Factory has indeed been imported, and skip the file if not?
 
@@ -234,6 +239,7 @@ def process(fn):
 		# Anything exported, just look at the base thing
 		if el.type in ("ExportNamedDeclaration", "ExportDefaultDeclaration"):
 			el = el.declaration
+			if not el: continue # Possibly a reexport or something
 		# function func(x) {y}
 		if el.type == "FunctionDeclaration" and el.id: scope[el.id.name] = [el]
 	# Second pass: Recursively look for all set_content calls.
