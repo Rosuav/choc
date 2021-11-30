@@ -49,7 +49,12 @@ def descend(el, scopes, sc):
 
 @element
 def NewScope(el, scopes, sc):
-	"""Program FunctionDeclaration ArrowFunctionExpression FunctionExpression"""
+	"""Program FunctionDeclaration FunctionExpression"""
+	descend(el.body, scopes + ({ },), sc)
+
+@element
+def ArrowFunctionExpression(el, scopes, sc):
+	if sc == "return" and el.expression: sc = "set_content"
 	descend(el.body, scopes + ({ },), sc)
 
 @element
@@ -104,7 +109,7 @@ def Call(el, scopes, sc):
 @element
 def ReturnStatement(el, scopes, sc):
 	if sc == "return": sc = "set_content"
-	descend(el.expression, scopes, sc)
+	descend(el.argument, scopes, sc)
 
 @element
 def ExpressionStatement(el, scopes, sc):
