@@ -169,9 +169,10 @@ def process(fn):
 	data = """
 	import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
 	const {FORM, LABEL, INPUT} = choc;
+	const f1 = () => {HP()}, f2 = () => PRE(), f3 = () => {return B("bold");};
 	function update() {
 		let el = FORM(LABEL(["Speak thy mind:", INPUT({name: "thought"})]))
-		set_content("main", el)
+		set_content("main", [el, f1(), f2(), f3()])
 	}
 	"""
 	module = esprima.parseModule(data, {"loc": True})
