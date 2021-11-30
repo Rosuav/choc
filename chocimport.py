@@ -25,6 +25,9 @@ possible styles of usage:
 
 import esprima # ImportError? pip install -r requirements.txt
 
+def find_chocolate(el):
+	"""TODO"""
+
 elements = { }
 def element(f):
 	if f.__doc__:
@@ -60,21 +63,29 @@ def BodyDescender(el, scopes):
 @element
 def CallExpression(el, scopes):
 	print("Function call!", el)
+	if el.callee.type == "Identifier" and el.callee.name == "set_content":
+		# Alright! We're setting content.
+		if len(el.arguments) < 2: return # Huh. Need two args though.
+		find_chocolate(el.arguments[1])
+		if len(el.arguments) > 2:
+			print("Extra arguments to set_content - did you intend to pass an array?", file=sys.stderr)
+			print(source_lines[el.loc.start.line - 1])
 
 @element
 def ExpressionStatement(el, scopes): descend(el.expression, scopes)
 
 def process(fn):
 	with open(fn) as f: data = f.read()
-	# module = esprima.parseModule(data)
-	module = esprima.parseModule("""
+	data = """
 	//import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
 	//const {FORM, LABEL, INPUT} = choc;
 	function update() {
 		//let el = FORM(LABEL(["Speak thy mind:", INPUT({name: "thought"})]))
 		set_content("main", el)
 	}
-	""")
+	"""
+	module = esprima.parseModule(data, {"loc": True})
+	global source_lines; source_lines = data.split("\n")
 	# First pass: Collect top-level functions
 	functions = { }
 	for el in module.body:
