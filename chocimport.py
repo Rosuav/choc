@@ -71,11 +71,13 @@ def ImportDeclaration(el, scopes):
 @element
 def Identifier(el, scopes):
 	if "set_content" in scopes:
-		for scope in reversed(scopes):
-			if scope != "set_content" and el.name in scope:
+		while scopes:
+			*scopes, scope = scopes
+			if scope == "set_content": continue
+			if el.name in scope:
 				defn = scope[el.name]
 				scope[el.name] = [] # Only enter it once
-				descend(defn, scopes) # TODO: Use only the scopes that that identifier was defined in
+				descend(defn, (*scopes, scope, "set_content"))
 				break
 
 @element
