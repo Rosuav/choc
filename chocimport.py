@@ -80,7 +80,8 @@ def Identifier(el, scopes, sc):
 				break
 
 @element
-def CallExpression(el, scopes, sc):
+def Call(el, scopes, sc):
+	"""CallExpression NewExpression"""
 	descend(el.arguments, scopes, sc) # Assume a function's arguments can be incorporated into its return value
 	if el.callee.type == "Identifier": funcname = el.callee.name
 	else: return # For now, I'm ignoring any x.y() or x()() or anything
