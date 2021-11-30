@@ -33,135 +33,129 @@ def element(f):
 		elements[f.__name__] = f
 	return f
 
-def descend(el, scopes):
+def descend(el, scopes, sc):
 	if not el: return
 	if isinstance(el, list):
-		for el in el: descend(el, scopes)
+		for el in el: descend(el, scopes, sc)
 		return
 	f = elements.get(el.type)
-	if f: f(el, scopes)
+	if f: f(el, scopes, sc)
 	else:
 		print("Unknown type:", el.type)
-		elements[el.type] = lambda el, scopes: None
+		elements[el.type] = lambda el, scopes, sc: None
 
 # Recursive AST descent handlers
 # Each one receives the current element and a tuple of current scopes
 
 @element
-def NewScope(el, scopes):
+def NewScope(el, scopes, sc):
 	"""Program FunctionDeclaration ArrowFunctionExpression FunctionExpression"""
-	descend(el.body, scopes + ({ },))
+	descend(el.body, scopes + ({ },), sc)
 
 @element
-def BodyDescender(el, scopes):
+def BodyDescender(el, scopes, sc):
 	"""BlockStatement LabeledStatement WhileStatement DoWhileStatement CatchClause
 	ForStatement ForInStatement ForOfStatement"""
-	descend(el.body, scopes)
+	descend(el.body, scopes, sc)
 
 @element
-def Ignore(el, scopes):
+def Ignore(el, scopes, sc):
 	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement ThrowStatement UpdateExpression
 	MemberExpression ImportExpression TemplateExpression ContinueStatement BreakStatement"""
 	# I assume that template strings will be used only for strings, not for DOM elements.
 
 @element
-def ImportDeclaration(el, scopes):
+def ImportDeclaration(el, scopes, sc):
 	pass # Optionally check that Choc Factory has indeed been imported, and skip the file if not?
 
 @element
-def Identifier(el, scopes):
-	if "set_content" in scopes:
+def Identifier(el, scopes, sc):
+	if sc:
 		while scopes:
 			*scopes, scope = scopes
-			if scope == "set_content": continue
 			if el.name in scope:
 				defn = scope[el.name]
 				scope[el.name] = [] # Only enter it once
-				descend(defn, (*scopes, scope, "set_content"))
+				descend(defn, (*scopes, scope), True)
 				break
 
 @element
-def CallExpression(el, scopes):
-	descend(el.arguments, scopes) # Assume a function's arguments can be incorporated into its return value
+def CallExpression(el, scopes, sc):
+	descend(el.arguments, scopes, sc) # Assume a function's arguments can be incorporated into its return value
 	if el.callee.type == "Identifier": funcname = el.callee.name
 	else: return # For now, I'm ignoring any x.y() or x()() or anything
 	if funcname == "set_content":
 		# Alright! We're setting content. First arg is the target, second is the content.
 		if len(el.arguments) < 2: return # Huh. Need two args. Whatever.
-		descend(el.arguments[1], scopes + ("set_content",))
+		descend(el.arguments[1], scopes, True)
 		if len(el.arguments) > 2:
 			print("Extra arguments to set_content - did you intend to pass an array?", file=sys.stderr)
 			print(source_lines[el.loc.start.line - 1], file=sys.stderr)
-	if "set_content" in scopes:
+	if sc:
 		if funcname in functions:
 			# Descend into the function (but only once, since this is static
 			# analysis). Note that the current scopes do NOT apply - we use the
 			# top-level scope only, since functions in this mapping are top-levels.
-			descend(functions.pop(funcname), (scopes[0], "set_content"))
+			descend(functions.pop(funcname), scopes[:1], True)
 		elif funcname.isupper():
 			print("GOT A CHOC CALL:", el.callee.name)
 
 @element
-def ExpressionStatement(el, scopes): descend(el.expression, scopes)
+def ExpressionStatement(el, scopes, sc):
+	descend(el.expression, scopes, sc)
 
 @element
-def If(el, scopes):
+def If(el, scopes, sc):
 	"""IfStatement ConditionalExpression"""
-	descend(el.consequent, scopes)
-	descend(el.alternate, scopes)
+	descend(el.consequent, scopes, sc)
+	descend(el.alternate, scopes, sc)
 
 @element
-def SwitchStatement(el, scopes):
-	descend(el.cases, scopes)
+def SwitchStatement(el, scopes, sc):
+	descend(el.cases, scopes, sc)
 @element
-def SwitchCase(el, scopes):
-	descend(el.consequent, scopes)
+def SwitchCase(el, scopes, sc):
+	descend(el.consequent, scopes, sc)
 
 @element
-def TryStatement(el, scopes):
-	descend(el.block, scopes)
-	descend(el.handler, scopes)
-	descend(el.finalizer, scopes)
+def TryStatement(el, scopes, sc):
+	descend(el.block, scopes, sc)
+	descend(el.handler, scopes, sc)
+	descend(el.finalizer, scopes, sc)
 
 @element
-def ArrayExpression(el, scopes):
-	descend(el.elements, scopes)
+def ArrayExpression(el, scopes, sc):
+	descend(el.elements, scopes, sc)
 
 @element
-def ObjectExpression(el, scopes):
+def ObjectExpression(el, scopes, sc):
 	# Not sure what contexts this would make sense in. Figure it out, then add
 	# descend calls accordingly.
 	pass
 
 @element
-def Unary(el, scopes):
+def Unary(el, scopes, sc):
 	"""UnaryExpression AwaitExpression SpreadExpression YieldExpression"""
-	descend(el.argument, scopes)
+	descend(el.argument, scopes, sc)
 
 @element
-def Binary(el, scopes):
+def Binary(el, scopes, sc):
 	"""BinaryExpression LogicalExpression"""
-	descend(el.left, scopes)
-	descend(el.right, scopes)
+	descend(el.left, scopes, sc)
+	descend(el.right, scopes, sc)
 
 # TODO: Any assignment, add it to the appropriate scope (if declaration, the latest)
 # Don't worry about subscoping within a function
 # All additions are some_scope.setdefault(name, []).append(el)
 @element
-def VariableDeclaration(el, scopes):
-	for scope in reversed(scopes):
-		if scope != "set_content": break
-	else: return # uhh shouldn't happen, the top level should always be a real scope
+def VariableDeclaration(el, scopes, sc):
 	for decl in el.declarations:
 		if decl.init:
-			scope.setdefault(decl.id.name, []).append(decl.init)
+			scopes[-1].setdefault(decl.id.name, []).append(decl.init)
 
 @element
-def AssignmentExpression(el, scopes):
-	for scope in reversed(scopes):
-		if scope != "set_content": break
-	else: return # uhh shouldn't happen, the top level should always be a real scope
-	print("Assigning to", el.left)
+def AssignmentExpression(el, scopes, sc):
+	print("Assigning to", el.left.type)
 	# As per declarations
 
 def process(fn):
@@ -193,7 +187,7 @@ def process(fn):
 					functions[decl.id.name] = decl.init
 		# Note that reassigning to a variable won't trigger this currently.
 	# Second pass: Recursively look for all set_content calls.
-	descend(module, ())
+	descend(module, (), False)
 
 if __name__ == "__main__":
 	if len(sys.argv) == 1:
