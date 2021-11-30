@@ -14,13 +14,18 @@ This is very primitive static analysis and can recognize only a small set of
 possible styles of usage:
 
 1) Direct usage, see above. Element name must be all-caps.
-2) function thing() {return FORM(...);} set_content("main", thing());
-   - top-level functions only
+2) set_content("main", thing()); function thing() {return FORM(...);}
+   - top-level functions only (otherwise has to be defined before use)
 3) function update() {stuff = LABEL(INPUT()); set_content("main", stuff)}
-   - can handle any assignment within the same function including declarations
+   - can handle any assignment within scope including declarations
 4) TODO: export function make_content() {return B("hello")}
    - Would require a parameter to say "analyze exported function named X"
 
+Additional idioms to detect:
+1) const arr = []; arr.push(LI())
+2) const arr = stuff.map(thing => LI(thing.name))
+3) elem.appendChild(LI())
+4) Top-level set_content calls
 """
 import sys
 import esprima # ImportError? pip install -r requirements.txt
@@ -47,15 +52,22 @@ def descend(el, scopes, sc):
 # Recursive AST descent handlers
 # Each one receives the current element and a tuple of current scopes
 
+# On finding any sort of function, descend into it to probe.
 @element
-def NewScope(el, scopes, sc):
-	"""Program FunctionDeclaration FunctionExpression"""
+def FunctionExpression(el, scopes, sc):
+	if sc != "return": sc = "" # If we're not *calling* the function, then just probe it, don't process its return value
 	descend(el.body, scopes + ({ },), sc)
 
 @element
 def ArrowFunctionExpression(el, scopes, sc):
-	if sc == "return" and el.expression: sc = "set_content"
-	descend(el.body, scopes + ({ },), sc)
+	if sc == "return" and el.expression: # Braceless arrow functions implicitly return
+		descend(el.body, scopes + ({ },), "set_content")
+	else: FunctionExpression(el, scopes, sc)
+
+@element
+def FunctionDeclaration(el, scopes, sc):
+	if sc != "return" and el.id: scopes[-1].setdefault(el.id.name).append(el)
+	FunctionExpression(el, scopes, sc)
 
 @element
 def BodyDescender(el, scopes, sc):
@@ -98,12 +110,16 @@ def Call(el, scopes, sc):
 			print("Extra arguments to set_content - did you intend to pass an array?", file=sys.stderr)
 			print(source_lines[el.loc.start.line - 1], file=sys.stderr)
 	if sc == "set_content":
-		if funcname in functions:
-			# Descend into the function (but only once, since this is static
-			# analysis). Note that the current scopes do NOT apply - we use the
-			# top-level scope only, since functions in this mapping are top-levels.
-			descend(functions.pop(funcname), scopes[:1], "return")
-		elif funcname.isupper():
+		for scope in reversed(scopes):
+			if funcname in scope:
+				# Descend into the function. It's possible we've already scanned it
+				# for actual set_content calls, but now we will scan it for return
+				# values as well. This is at most two scans, we'll never do more.
+				defn = scope[funcname]
+				scope[funcname] = []
+				descend(defn, scopes[:1], "return")
+				return
+		if funcname.isupper():
 			print("GOT A CHOC CALL:", el.callee.name)
 
 @element
@@ -186,31 +202,26 @@ def process(fn):
 	import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
 	const {FORM, LABEL, INPUT} = choc;
 	const f1 = () => {HP()}, f2 = () => PRE(), f3 = () => {return B("bold");};
+	let f4 = "test";
 	function update() {
 		let el = FORM(LABEL(["Speak thy mind:", INPUT({name: "thought"})]))
-		set_content("main", [el, f1(), f2(), f3()])
+		set_content("main", [el, f1(), f2(), f3(), f4(), f5()])
 	}
+	f4 = () => DIV(); //Won't be found (violates DBU)
+	function f5() {return SPAN();}
 	"""
 	module = esprima.parseModule(data, {"loc": True})
 	global source_lines; source_lines = data.split("\n")
-	# First pass: Collect top-level functions
-	global functions; functions = { }
+	# First pass: Collect top-level function declarations (the ones that get hoisted)
+	scope = { }
 	for el in module.body:
 		# Anything exported, just look at the base thing
 		if el.type in ("ExportNamedDeclaration", "ExportDefaultDeclaration"):
 			el = el.declaration
-
 		# function func(x) {y}
-		if el.type == "FunctionDeclaration": functions[el.id.name] = el
-		# const func = x => y
-		# const func = function (x) {y}
-		if el.type == "VariableDeclaration":
-			for decl in el.declarations:
-				if decl.init and decl.init.type in ("ArrowFunctionExpression", "FunctionExpression"):
-					functions[decl.id.name] = decl.init
-		# Note that reassigning to a variable won't trigger this currently.
+		if el.type == "FunctionDeclaration" and el.id: scope[el.id.name] = [el]
 	# Second pass: Recursively look for all set_content calls.
-	descend(module, (), "")
+	descend(module.body, (scope,), "")
 
 if __name__ == "__main__":
 	if len(sys.argv) == 1:
