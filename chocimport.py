@@ -275,15 +275,16 @@ def process(fn):
 	if "render_item" in scope: descend(scope["render_item"], (scope,), "return")
 	got_imports.sort()
 	want = sorted(want_imports)
-	print(fn)
-	print("GOT:", got_imports)
-	print("WANT:", want)
-	if want != got_imports and autoimport_line != -1:
-		source_lines[autoimport_start - 1 : autoimport_end] = [
-			"const {" + ", ".join(want) + "} = choc;"
-		]
-		print("\n".join(source_lines))
-		# TODO: Write-back if the user wants it
+	if want != got_imports:
+		print(fn)
+		print("GOT:", got_imports)
+		print("WANT:", want)
+		if autoimport_line != -1:
+			source_lines[autoimport_start - 1 : autoimport_end] = [
+				"const {" + ", ".join(want) + "} = choc;"
+			]
+			print("\n".join(source_lines))
+			# TODO: Write-back if the user wants it
 
 if __name__ == "__main__":
 	if len(sys.argv) == 1:
