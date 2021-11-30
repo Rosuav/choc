@@ -99,7 +99,7 @@ def CallExpression(el, scopes):
 			# Descend into the function (but only once, since this is static
 			# analysis). Note that the current scopes do NOT apply - we use the
 			# top-level scope only, since functions in this mapping are top-levels.
-			descend(functions.pop(funcname), scopes[:1] + ("set_content",))
+			descend(functions.pop(funcname), (scopes[0], "set_content"))
 
 @element
 def ExpressionStatement(el, scopes): descend(el.expression, scopes)
