@@ -80,7 +80,7 @@ def BodyDescender(el, scopes, sc):
 @element
 def Ignore(el, scopes, sc):
 	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement ThrowStatement UpdateExpression
-	MemberExpression ImportExpression TemplateExpression ContinueStatement BreakStatement"""
+	MemberExpression ImportExpression TemplateLiteral ContinueStatement BreakStatement"""
 	# I assume that template strings will be used only for strings, not for DOM elements.
 
 @element
@@ -198,7 +198,7 @@ def ObjectExpression(el, scopes, sc):
 
 @element
 def Unary(el, scopes, sc):
-	"""UnaryExpression AwaitExpression SpreadExpression YieldExpression"""
+	"""UnaryExpression AwaitExpression SpreadElement YieldExpression"""
 	descend(el.argument, scopes, sc)
 
 @element
