@@ -45,6 +45,12 @@ def descend(el, scopes, sc):
 	if isinstance(el, list):
 		for el in el: descend(el, scopes, sc)
 		return
+	# Any given element need only be visited once in any particular context
+	# Note that a list might have had more appended to it since it was last
+	# visited, so this check applies to the elements, not the whole list.
+	if getattr(el, "choc_visited_" + sc, False): return
+	setattr(el, "choc_visited_" + sc, True)
+
 	f = elements.get(el.type)
 	if f: f(el, scopes, sc)
 	else:
@@ -108,9 +114,7 @@ def Identifier(el, scopes, sc):
 		while scopes:
 			*scopes, scope = scopes
 			if el.name in scope:
-				defn = scope[el.name]
-				scope[el.name] = [] # Only enter it once
-				descend(defn, (*scopes, scope), sc)
+				descend(scope[el.name], (*scopes, scope), sc)
 				break
 
 @element
@@ -154,10 +158,9 @@ def Call(el, scopes, sc):
 			if funcname in scope:
 				# Descend into the function. It's possible we've already scanned it
 				# for actual set_content calls, but now we will scan it for return
-				# values as well. This is at most two scans, we'll never do more.
-				defn = scope[funcname]
-				scope[funcname] = []
-				descend(defn, scopes[:1], "return")
+				# values as well. (If we've already scanned for return values, this
+				# will quickly return.)
+				descend(scope[funcname], scopes[:1], "return")
 				return
 		if funcname.isupper():
 			want_imports.add(funcname)
