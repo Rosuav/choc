@@ -307,7 +307,10 @@ def process(fn, *, fix=False, extcall=()):
 			start, end = Ctx.autoimport_range
 			data = data[:start] + "const {" + ", ".join(want) + "} = choc;" + data[end:]
 			print(data)
-			# TODO: Write-back if the user wants it
+			# Write-back if the user wants it
+			if fix and fn != "-":
+				with open(fn, "w") as f:
+					f.write(data)
 
 def main(args):
 	import argparse
