@@ -120,7 +120,7 @@ def Call(el, scopes, sc):
 	if el.callee.type == "Identifier": funcname = el.callee.name
 	elif el.callee.type == "MemberExpression":
 		c = el.callee
-		descend(c.object, scopes, sc) # "foo(...).spam()" starts out by calling "foo(...)"
+		descend(c.object, scopes, "return" if sc == "set_content" else sc) # "foo(...).spam()" starts out by calling "foo(...)"
 		if c.computed: descend(c.property, scopes, sc) # "foo[x]()" starts out by evaluating x
 		elif c.property.name == "appendChild": # elem.appendChild counts as DOM work
 			descend(el.arguments, scopes, "set_content")
@@ -196,9 +196,11 @@ def ArrayExpression(el, scopes, sc):
 
 @element
 def ObjectExpression(el, scopes, sc):
-	# Not sure what contexts this would make sense in. Figure it out, then add
-	# descend calls accordingly.
-	pass
+	descend(el.properties, scopes, sc)
+@element
+def Property(el, scopes, sc):
+	descend(el.key, scopes, sc)
+	descend(el.value, scopes, sc)
 
 @element
 def Unary(el, scopes, sc):
