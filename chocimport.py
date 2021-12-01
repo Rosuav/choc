@@ -80,7 +80,7 @@ def BodyDescender(el, scopes, sc):
 @element
 def Ignore(el, scopes, sc):
 	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement ThrowStatement UpdateExpression
-	ImportExpression TemplateLiteral ContinueStatement BreakStatement"""
+	ImportExpression TemplateLiteral ContinueStatement BreakStatement ThisExpression ObjectPattern"""
 	# I assume that template strings will be used only for strings, not for DOM elements.
 
 @element
@@ -215,7 +215,7 @@ def Binary(el, scopes, sc):
 
 @element
 def VariableDeclaration(el, scopes, sc):
-	if el.loc.start.line <= autoimport_line and el.loc.end.line >= autoimport_line:
+	if el.loc and el.loc.start.line <= autoimport_line and el.loc.end.line >= autoimport_line:
 		global autoimport_range; autoimport_range = el.range
 	for decl in el.declarations:
 		if decl.init:
@@ -240,6 +240,8 @@ def AssignmentExpression(el, scopes, sc):
 	# call may be missed. This is lexical analysis, not control-flow analysis.
 	# Note also that this treats augmented assignment the same as assignment, collecting all
 	# relevant expressions together.
+	# Note that destructuring assignment will parse the right-hand-side but not stash it.
+	# It MAY be better to replicate it across all the names.
 	name = el.left.name
 	for scope in reversed(scopes):
 		if name in scope:
