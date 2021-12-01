@@ -91,7 +91,7 @@ def BodyDescender(el, scopes, sc):
 @element
 def Ignore(el, scopes, sc):
 	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement ThrowStatement UpdateExpression
-	ImportExpression TemplateLiteral ContinueStatement BreakStatement ThisExpression ObjectPattern"""
+	ImportExpression TemplateLiteral ContinueStatement BreakStatement ThisExpression ObjectPattern ArrayPattern"""
 	# I assume that template strings will be used only for strings, not for DOM elements.
 
 @element
