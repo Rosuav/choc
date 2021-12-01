@@ -295,7 +295,7 @@ def process(fn, *, fix=False, extcall=()):
 	descend(module.body, (scope,), "")
 	# Some exported functions can return DOM elements. It's possible that they've
 	# already been scanned, but that's okay, we'll deduplicate in descend().
-	for func in extcall:
+	for func in extcall or ():
 		if func in scope: descend(scope[func], (scope,), "return")
 	Ctx.got_imports.sort()
 	want = sorted(Ctx.want_imports)
@@ -306,9 +306,9 @@ def process(fn, *, fix=False, extcall=()):
 		if Ctx.autoimport_range:
 			start, end = Ctx.autoimport_range
 			data = data[:start] + "const {" + ", ".join(want) + "} = choc;" + data[end:]
-			print(data)
 			# Write-back if the user wants it
-			if fix and fn != "-":
+			if fn == "-": print(data)
+			if fix:
 				with open(fn, "w") as f:
 					f.write(data)
 
