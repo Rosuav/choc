@@ -28,9 +28,14 @@ possible styles of usage, but the most common ones:
 import sys
 import esprima # ImportError? pip install -r requirements.txt
 
-autoimport_line = -1 # If we find "//autoimport" at the end of a line, any declaration surrounding that will be edited.
-autoimport_range = None
-got_imports, want_imports = [], set()
+class Ctx:
+	@classmethod
+	def reset(cls, fn="-"):
+		Ctx.autoimport_line = -1 # If we find "//autoimport" at the end of a line, any declaration surrounding that will be edited.
+		Ctx.autoimport_range = None
+		Ctx.got_imports, Ctx.want_imports = [], set()
+		Ctx.fn = fn
+		Ctx.source_lines = []
 
 elements = { }
 def element(f):
@@ -54,7 +59,7 @@ def descend(el, scopes, sc):
 	f = elements.get(el.type)
 	if f: f(el, scopes, sc)
 	else:
-		print("Unknown type:", el.type)
+		print("%s:%d: Unknown type: %s" % (Ctx.fn, el.loc.start.line, el.type))
 		elements[el.type] = lambda el, scopes, sc: None
 
 # Recursive AST descent handlers
@@ -151,8 +156,9 @@ def Call(el, scopes, sc):
 		if len(el.arguments) < 2: return # Huh. Need two args. Whatever.
 		descend(el.arguments[1], scopes, "set_content")
 		if len(el.arguments) > 2:
-			print("Extra arguments to set_content - did you intend to pass an array?", file=sys.stderr)
-			print(source_lines[el.loc.start.line - 1], file=sys.stderr)
+			print("%s:%d: Extra arguments to set_content - did you intend to pass an array?" %
+				(Ctx.fn, el.loc.start.line), file=sys.stderr)
+			print(Ctx.source_lines[el.loc.start.line - 1], file=sys.stderr)
 	if sc == "set_content":
 		for scope in reversed(scopes):
 			if funcname in scope:
@@ -163,7 +169,7 @@ def Call(el, scopes, sc):
 				descend(scope[funcname], scopes[:1], "return")
 				return
 		if funcname.isupper():
-			want_imports.add(funcname)
+			Ctx.want_imports.add(funcname)
 
 @element
 def ReturnStatement(el, scopes, sc):
@@ -218,8 +224,8 @@ def Binary(el, scopes, sc):
 
 @element
 def VariableDeclaration(el, scopes, sc):
-	if el.loc and el.loc.start.line <= autoimport_line and el.loc.end.line >= autoimport_line:
-		global autoimport_range; autoimport_range = el.range
+	if el.loc and el.loc.start.line <= Ctx.autoimport_line and el.loc.end.line >= Ctx.autoimport_line:
+		Ctx.autoimport_range = el.range
 	for decl in el.declarations:
 		if decl.init:
 			if decl.init.type == "Identifier" and decl.init.name == "choc":
@@ -227,7 +233,7 @@ def VariableDeclaration(el, scopes, sc):
 				if decl.id.type != "ObjectPattern": continue # Or maybe not destructuring. Whatever, you do you.
 				for prop in decl.id.properties:
 					if prop.key.type == "Identifier" and prop.key.name.isupper():
-						got_imports.append(prop.key.name)
+						Ctx.got_imports.append(prop.key.name)
 				continue
 			# Descend into it, looking for functions; also save it in case it's used later.
 			descend(decl.init, scopes, sc)
@@ -253,12 +259,14 @@ def AssignmentExpression(el, scopes, sc):
 	# If we didn't find anything to assign to, it's probably landing at top-level. Warn?
 	scopes[0][name] = [el.right]
 
-def process(fn):
+def process(fn, *, fix=False, extcall=()):
+	Ctx.reset(fn)
 	if fn != "-":
 		with open(fn) as f: data = f.read()
 	else: data = """
 	import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
 	const {FORM, LABEL, INPUT} = choc; //autoimport
+	const {DIV} = choc;
 	const f1 = () => {HP()}, f2 = () => PRE(), f3 = () => {return B("bold");};
 	let f4 = "test";
 	function update() {
@@ -269,10 +277,10 @@ def process(fn):
 	function f5() {return SPAN();}
 	"""
 	module = esprima.parseModule(data, {"loc": True, "range": True})
-	global source_lines; source_lines = data.split("\n")
-	for i, line in enumerate(source_lines):
+	Ctx.source_lines = data.split("\n")
+	for i, line in enumerate(Ctx.source_lines):
 		if line.strip().endswith("autoimport"):
-			global autoimport_line; autoimport_line = i + 1
+			Ctx.autoimport_line = i + 1
 			break
 	# First pass: Collect top-level function declarations (the ones that get hoisted)
 	scope = { }
@@ -285,25 +293,30 @@ def process(fn):
 		if el.type == "FunctionDeclaration" and el.id: scope[el.id.name] = [el]
 	# Second pass: Recursively look for all set_content calls.
 	descend(module.body, (scope,), "")
-	# HACK: An exported render_item function returns DOM elements.
-	if "render_item" in scope: descend(scope["render_item"], (scope,), "return")
-	got_imports.sort()
-	want = sorted(want_imports)
-	if want != got_imports:
+	# Some exported functions can return DOM elements. It's possible that they've
+	# already been scanned, but that's okay, we'll deduplicate in descend().
+	for func in extcall:
+		if func in scope: descend(scope[func], (scope,), "return")
+	Ctx.got_imports.sort()
+	want = sorted(Ctx.want_imports)
+	if want != Ctx.got_imports:
 		print(fn)
-		print("GOT:", got_imports)
+		print("GOT:", Ctx.got_imports)
 		print("WANT:", want)
-		if autoimport_range:
-			start, end = autoimport_range
+		if Ctx.autoimport_range:
+			start, end = Ctx.autoimport_range
 			data = data[:start] + "const {" + ", ".join(want) + "} = choc;" + data[end:]
 			print(data)
 			# TODO: Write-back if the user wants it
 
-if __name__ == "__main__":
-	if len(sys.argv) == 1:
-		print("USAGE: python3 %s fn [fn...]", file=sys.stderr)
-		print("Will audit Choc Factory imports for those files.")
-		# TODO: option to autofix
-	for fn in sys.argv[1:]:
-		autoimport_line, got_imports, want_imports = -1, [], set()
-		process(fn)
+def main(args):
+	import argparse
+	p = argparse.ArgumentParser(description="Validate Chocolate Factory imports")
+	p.add_argument("file", nargs="+", help="File(s) to process")
+	p.add_argument("--fix", action="store_true", help="Fix any discrepancies automatically")
+	p.add_argument("--extcall", action="append", help="Identify an externally-called DOM generation function")
+	args = vars(p.parse_args(args))
+	files = args.pop("file")
+	for fn in files: process(fn, **args)
+
+if __name__ == "__main__": main(sys.argv[1:])
