@@ -300,7 +300,10 @@ def process(fn, *, fix=False, extcall=()):
 	want = sorted(Ctx.want_imports)
 	if want != Ctx.got_imports:
 		print(fn)
-		print("GOT:", Ctx.got_imports)
+		lose = [x for x in Ctx.got_imports if x not in want]
+		gain = [x for x in want if x not in Ctx.got_imports]
+		if lose: print("LOSE:", lose)
+		if gain: print("GAIN:", gain)
 		print("WANT:", want)
 		if Ctx.autoimport_range:
 			start, end = Ctx.autoimport_range
