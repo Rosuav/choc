@@ -18,9 +18,8 @@ possible styles of usage, but the most common ones:
    - top-level functions only (otherwise has to be defined before use)
 3) function update() {stuff = LABEL(INPUT()); set_content("main", stuff)}
    - can handle any assignment within scope including declarations
-4) TODO: export function make_content() {return B("hello")}
-   - Would require a parameter to say "analyze exported function named X"
-   - Currently hacked in for render_item() for StilleBot
+4) export function make_content() {return B("hello")}
+   - Requires "--extcall make_content" to signal that make_content is used thus
 5) const arr = []; arr.push(LI()); set_content(thing, arr)
 6) const arr = stuff.map(thing => LI(thing.name)); set_content(thing, arr)
 7) DOM("#foo").appendChild(LI())
