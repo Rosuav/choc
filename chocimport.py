@@ -23,6 +23,7 @@ possible styles of usage, but the most common ones:
 5) const arr = []; arr.push(LI()); set_content(thing, arr)
 6) const arr = stuff.map(thing => LI(thing.name)); set_content(thing, arr)
 7) DOM("#foo").appendChild(LI())
+8) (x => ABBR(x.attr, x.text))(stuff)
 """
 import sys
 import esprima # ImportError? pip install -r requirements.txt
@@ -148,6 +149,10 @@ def Call(el, scopes, sc):
 					if name in scope:
 						scope[name].append(el.arguments)
 						return
+		return
+	elif el.callee.type == "ArrowFunctionExpression" or el.callee.type == "FunctionExpression":
+		# Function expression, immediately called. Might also be being named.
+		descend(el.callee, scopes, "return" if sc == "set_content" else sc)
 		return
 	else: return # For now, I'm ignoring any unrecognized x.y() or x()() or anything
 	if funcname == "set_content":
