@@ -20,6 +20,8 @@ possible styles of usage, but the most common ones:
    - can handle any assignment within scope including declarations
 4) export function make_content() {return B("hello")}
    - Requires "--extcall make_content" to signal that make_content is used thus
+   - Parameter not needed if name in all caps:
+     export function COMPONENT(x) {return DIV(x.name);}
 5) const arr = []; arr.push(LI()); set_content(thing, arr)
 6) const arr = stuff.map(thing => LI(thing.name)); set_content(thing, arr)
 7) DOM("#foo").appendChild(LI())
@@ -279,6 +281,8 @@ def process(fn, *, fix=False, extcall=()):
 	}
 	f4 = () => DIV(); //Won't be found (violates DBU)
 	function f5() {return SPAN();}
+	export function COMPONENT(x) {return FIGURE(x.name);}
+	function NONCOMPONENT(x) {return FIGCAPTION(x.name);} //Non-exported won't be detected unless called
 	"""
 	module = esprima.parseModule(data, {"loc": True, "range": True})
 	Ctx.source_lines = data.split("\n")
@@ -288,19 +292,25 @@ def process(fn, *, fix=False, extcall=()):
 			break
 	# First pass: Collect top-level function declarations (the ones that get hoisted)
 	scope = { }
+	exporteds = []
 	for el in module.body:
 		# Anything exported, just look at the base thing
-		if el.type in ("ExportNamedDeclaration", "ExportDefaultDeclaration"):
+		exported = el.type in ("ExportNamedDeclaration", "ExportDefaultDeclaration")
+		if exported:
 			el = el.declaration
 			if not el: continue # Possibly a reexport or something
 		# function func(x) {y}
-		if el.type == "FunctionDeclaration" and el.id: scope[el.id.name] = [el]
+		if el.type == "FunctionDeclaration" and el.id:
+			scope[el.id.name] = [el]
+			# export function COMPONENT() { }
+			if exported and el.id.name.isupper(): exporteds.append(el)
 	# Second pass: Recursively look for all set_content calls.
 	descend(module.body, (scope,), "")
 	# Some exported functions can return DOM elements. It's possible that they've
 	# already been scanned, but that's okay, we'll deduplicate in descend().
 	for func in extcall or ():
 		if func in scope: descend(scope[func], (scope,), "return")
+	descend(exporteds, (scope,), "return");
 	Ctx.got_imports.sort()
 	want = sorted(Ctx.want_imports)
 	if want != Ctx.got_imports:
