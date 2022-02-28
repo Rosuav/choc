@@ -25,7 +25,8 @@ possible styles of usage, but the most common ones:
 5) const arr = []; arr.push(LI()); set_content(thing, arr)
 6) const arr = stuff.map(thing => LI(thing.name)); set_content(thing, arr)
 7) DOM("#foo").appendChild(LI())
-8) (x => ABBR(x.attr, x.text))(stuff)
+8) DOM("#foo").replaceWith(DIV())
+9) (x => ABBR(x.attr, x.text))(stuff)
 """
 import sys
 import esprima # ImportError? pip install -r requirements.txt
@@ -133,7 +134,7 @@ def Call(el, scopes, sc):
 		c = el.callee
 		descend(c.object, scopes, "return" if sc == "set_content" else sc) # "foo(...).spam()" starts out by calling "foo(...)"
 		if c.computed: descend(c.property, scopes, sc) # "foo[x]()" starts out by evaluating x
-		elif c.property.name == "appendChild": # elem.appendChild counts as DOM work
+		elif c.property.name in ("appendChild", "replaceWith"): # Some methods count as DOM work
 			descend(el.arguments, scopes, "set_content")
 		elif c.property.name == "map":
 			# stuff.map(e => ...) is effectively a call to that function.
