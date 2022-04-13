@@ -1,5 +1,12 @@
 ## Chocolate Factory version history
 
+### v1.0.1
+
+* 1.0 did introduce an unintended backward compatibility break: names like
+  `className` used to work, but now `class` is needed. Reinstating compat
+  by making `classname` an alias for `class`, and `htmlfor` an alias for
+  `for`. Others will be added if they get noticed. Sorry about that!
+
 ### v1.0.0
 
 * Very few functional changes, just some cleanups to error handling. This is
