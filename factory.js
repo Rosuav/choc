@@ -128,9 +128,10 @@ let choc = function(tag, attributes, children) {
 		return set_content(ret, attributes);
 	}
 	if (attributes) for (let attr in attributes) {
+		let value = attributes[attr]; //I'd rather iterate pair-wise, but whatever
 		if (attr.toLowerCase() === "classname") attr = "class"; //Compatibility hack for those attributes
-		if (attr.toLowerCase() === "htmlfor") attr = "for"; //where not ret[attr] <=> ret.setAttribute(attr)
-		ret.setAttribute(attr, attributes[attr]);
+		else if (attr.toLowerCase() === "htmlfor") attr = "for"; //where not ret[attr] <=> ret.setAttribute(attr)
+		ret.setAttribute(attr, value);
 	}
 	if (children) set_content(ret, children);
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
