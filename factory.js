@@ -1,67 +1,8 @@
-/* Chocolate Factory v0.6.1
-
-DOM object builder. (Thanks to DeviCat for the name!)
-
-Recommended for use in a module script:
-import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {FORM, LABEL, INPUT} = choc;
-
-Can also be used in HTML:
-<script type=module src="https://rosuav.github.io/choc/factory.js"></script>
-<script defer src="/path/to/your/script.js"></script>
-
-Once imported, the chocolate factory can be used in a number of ways:
-* TAG(attr, contents) // recommended (requires second line of import)
-* choc.TAG(attr, contents) // also supported (does not require destructuring)
-* choc("TAG", attr, contents) // suitable for dynamic tag selection
-* chocify("TAG"); TAG(attr, contents) // deprecated, non-module scripts only
-
-Example:
-let el = FORM(LABEL(["Speak thy mind:", INPUT({name: "thought"})]))
-
-Regardless of how it's called, choc will return a newly-created element with
-the given tag, attributes, and contents. Both attributes and contents are
-optional, but if both are given, must be in that order.
-
-To replace the contents of a DOM element:
-    set_content(element, contents);
-The element can be either an actual DOM element or a selector. The contents
-can be a DOM element (eg created by choc() above), or a text string, or an
-array of elements and/or strings. Text strings will NOT be interpreted as
-HTML, and thus can safely contain untrusted content. Note that this will
-update a single element only, and will raise an error if multiple elements
-match. (Changed in v0.2: Now raises if duplicates, instead of ignoring them.)
-
-Hooking events can be done by selector. Internally this attaches the event
-to the document, so dynamically-created objects can still respond to events.
-    on("click", ".some-class", e => {console.log("Hello");});
-To distinguish between multiple objects that potentially match, e.match
-will be set to the object that received the event. (This is distinct from
-e.target and e.currentTarget.) NOTE: e.match is wiped after the event
-handler returns. For asynchronous use, capture it in a variable first.
-Additional options can be set with another argument, eg passing true to have
-the event handler attached to the capturing phase instead. Important for some
-types of events, irrelevant for others. New in v0.6.
-
-For other manipulations of DOM objects, start by locating one by its selector:
-    DOM('input[name="thought"]').value = "..."
-This is like document.querySelector(), but ensures that there is only one
-matching element, thus avoiding the risk of catching the wrong one. (It's also
-shorter. Way shorter.)
-
-If you use the <dialog> tag, consider fix_dialogs(). It adds basic support to
-browsers which lack it, and can optionally provide automatic behaviour for
-close buttons and/or clicking outside the dialog to close it.
-    fix_dialogs({close_selector: "button.close,input[type=submit]"});
-    fix_dialogs({click_outside: true});
-    //New in v0.5: Clicking outside dialogs closes them, but only if there is
-    //no <form> inside the <dialog>. Guards against accidental closings.
-    fix_dialogs({click_outside: "formless"});
-
+/* The Chocolate Factory (Thanks to DeviCat for the name!)
 
 The MIT License (MIT)
 
-Copyright (c) 2021 Chris Angelico
+Copyright (c) 2022 Chris Angelico
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -101,7 +42,11 @@ function append_child(elem, child) {
 }
 
 export function set_content(elem, children) {
-	if (typeof elem === "string") elem = DOM(elem);
+	if (typeof elem === "string") {
+		const el = DOM(elem);
+		if (!el) throw new Error("No element found for set_content: '" + elem + "'");
+		elem = el;
+	}
 	while (elem.lastChild) elem.removeChild(elem.lastChild);
 	append_child(elem, children);
 	return elem;
@@ -149,7 +94,7 @@ export function fix_dialogs(cfg) {
 	});
 	//Ideally, I'd like to feature-detect whether form[method=dialog] actually
 	//works, and do this if it doesn't; we assume that the lack of a showModal
-	//method implies this being also unsupported. New in Choc Factory 0.4.
+	//method implies this being also unsupported.
 	if (need_button_fix) on("click", 'dialog form[method="dialog"] button', e => {
 		e.match.closest("dialog").close(e.match.value);
 		e.preventDefault();
@@ -174,30 +119,32 @@ export function fix_dialogs(cfg) {
 let choc = function(tag, attributes, children) {
 	const ret = document.createElement(tag);
 	//If called as choc(tag, children), assume all attributes are defaults
-	if (typeof attributes === "string" || attributes instanceof Array || attributes instanceof Element)
+	if (typeof attributes === "string" || attributes instanceof Array || attributes instanceof Element) {
+		//But if called as choc(tag, child, child), that was probably an error.
+		//It's also possible someone tried to call choc(tag, child, attr); in
+		//that case, the warning will be slightly confusing, but still point to
+		//the right place.
+		if (children) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 		return set_content(ret, attributes);
+	}
 	if (attributes) for (let attr in attributes) {
-		if (attr.startsWith("data-")) //Simplistic - we don't transform "data-foo-bar" into "fooBar" per HTML.
-			ret.dataset[attr.slice(5)] = attributes[attr];
-		else if (attr === "form") //Setting the form attribute on an element has to be done differently.
-			ret.setAttribute("form", attributes[attr]);
-		else ret[attr] = attributes[attr];
+		ret.setAttribute(attr, attributes[attr]);
 	}
 	if (children) set_content(ret, children);
+	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "0.6.1";
+choc.__version__ = "1.0.0";
 
 //Interpret choc.DIV(attr, chld) as choc("DIV", attr, chld)
 //This is basically what Python would do as choc.__getattr__()
 choc = new Proxy(choc, {get: function(obj, prop) {
 	if (prop in obj) return obj[prop];
-	return obj[prop] = (a, c) => obj(prop, a, c);
+	return obj[prop] = obj.bind(null, prop);
 }});
 
 //For modules, make the main entry-point easily available.
 export default choc;
 
-//For non-module scripts, allow some globals to be used
+//For non-module scripts, allow some globals to be used. Also useful at the console.
 window.choc = choc; window.set_content = set_content; window.on = on; window.DOM = DOM; window.fix_dialogs = fix_dialogs;
-window.chocify = tags => tags.split(" ").forEach(tag => window[tag] = choc[tag]); //Deprecated, will be removed in 1.0

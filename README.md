@@ -1,9 +1,6 @@
 The Chocolate Factory
 =====================
 
-Formerly homed at https://rosuav.github.io/shed/chocfactory.js and still
-available from that location.
-
 The Chocolate Factory is a lightweight JavaScript DOM manipulation library,
 inspired both positively and negatively by jQuery, React.js, and others.
 Its goals are:
@@ -20,3 +17,7 @@ Its goals are:
 
 This repository also includes tools related to the Chocolate Factory, but
 using the library requires just one file, factory.js.
+
+[How to use the Chocolate Factory](docs)
+
+[What's New (change history)](whatsnew)
