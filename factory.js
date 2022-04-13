@@ -116,6 +116,9 @@ export function fix_dialogs(cfg) {
 	if (cfg.close_selector) on("click", cfg.close_selector, e => e.match.closest("dialog").close());
 }
 
+//Compatibility hack for those attributes where not ret[attr] <=> ret.setAttribute(attr). Might be made externally mutable? Maybe?
+const attr_xlat = {classname: "class", htmlfor: "for"};
+
 let choc = function(tag, attributes, children) {
 	const ret = document.createElement(tag);
 	//If called as choc(tag, children), assume all attributes are defaults
@@ -128,10 +131,7 @@ let choc = function(tag, attributes, children) {
 		return set_content(ret, attributes);
 	}
 	if (attributes) for (let attr in attributes) {
-		let value = attributes[attr]; //I'd rather iterate pair-wise, but whatever
-		if (attr.toLowerCase() === "classname") attr = "class"; //Compatibility hack for those attributes
-		else if (attr.toLowerCase() === "htmlfor") attr = "for"; //where not ret[attr] <=> ret.setAttribute(attr)
-		ret.setAttribute(attr, value);
+		ret.setAttribute(attr_xlat[attr.toLowerCase()] || attr, attributes[attr]);
 	}
 	if (children) set_content(ret, children);
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
