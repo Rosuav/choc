@@ -1,5 +1,12 @@
 ## Chocolate Factory version history
 
+### v1.0.2
+
+* Another patch to fix unintended backward compatibility breakage: names
+  beginning with "on" will now create event handlers. This is not recommended
+  and it is better to create handlers using on(), but this does work and will
+  be maintained.
+
 ### v1.0.1
 
 * 1.0 did introduce an unintended backward compatibility break: names like

@@ -131,13 +131,14 @@ let choc = function(tag, attributes, children) {
 		return set_content(ret, attributes);
 	}
 	if (attributes) for (let attr in attributes) {
-		ret.setAttribute(attr_xlat[attr.toLowerCase()] || attr, attributes[attr]);
+		if (attr.startsWith("on")) ret[attr] = attributes[attr]; //Events should be created with on(), but can be done this way too.
+		else ret.setAttribute(attr_xlat[attr.toLowerCase()] || attr, attributes[attr]);
 	}
 	if (children) set_content(ret, children);
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.0.1";
+choc.__version__ = "1.0.2";
 
 //Interpret choc.DIV(attr, chld) as choc("DIV", attr, chld)
 //This is basically what Python would do as choc.__getattr__()
