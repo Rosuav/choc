@@ -131,7 +131,7 @@ let choc = function(tag, attributes, children) {
 		return set_content(ret, attributes);
 	}
 	if (attributes) for (let attr in attributes) {
-		if (attr.startsWith("on")) ret[attr] = attributes[attr]; //Events should be created with on(), but can be done this way too.
+		if (attr.startsWith("on") || attr === "volume") ret[attr] = attributes[attr]; //Events should be created with on(), but can be done this way too.
 		else ret.setAttribute(attr_xlat[attr.toLowerCase()] || attr, attributes[attr]);
 	}
 	if (children) set_content(ret, children);
