@@ -139,7 +139,7 @@ let choc = function(tag, attributes, children) {
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.0.2";
+choc.__version__ = "1.0.3";
 
 //Interpret choc.DIV(attr, chld) as choc("DIV", attr, chld)
 //This is basically what Python would do as choc.__getattr__()
