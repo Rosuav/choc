@@ -118,6 +118,7 @@ export function fix_dialogs(cfg) {
 
 //Compatibility hack for those attributes where not ret[attr] <=> ret.setAttribute(attr). Might be made externally mutable? Maybe?
 const attr_xlat = {classname: "class", htmlfor: "for"};
+const attr_assign = {volume: 1, value: 1}; //Another weird compat hack, no idea why
 
 let choc = function(tag, attributes, children) {
 	const ret = document.createElement(tag);
@@ -131,7 +132,7 @@ let choc = function(tag, attributes, children) {
 		return set_content(ret, attributes);
 	}
 	if (attributes) for (let attr in attributes) {
-		if (attr.startsWith("on") || attr === "volume") ret[attr] = attributes[attr]; //Events should be created with on(), but can be done this way too.
+		if (attr.startsWith("on") || attr_assign[attr]) ret[attr] = attributes[attr]; //Events should be created with on(), but can be done this way too.
 		else ret.setAttribute(attr_xlat[attr.toLowerCase()] || attr, attributes[attr]);
 	}
 	if (children) set_content(ret, children);

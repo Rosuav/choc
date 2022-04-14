@@ -1,5 +1,9 @@
 ## Chocolate Factory version history
 
+### v1.0.3
+
+* Special case a few more things. I clearly don't know what I'm doing here.
+
 ### v1.0.2
 
 * Another patch to fix unintended backward compatibility breakage: names
