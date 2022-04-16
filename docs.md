@@ -4,7 +4,7 @@
 
 Using the Chocolate Factory in a module script is easy:
 
-    import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
+    import {choc, set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
     const {FORM, INPUT, LABEL} = choc; //autoimport
     set_content("body", FORM(
         LABEL(["Speak thy mind:", INPUT({name: "thought"})])

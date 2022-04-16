@@ -27,6 +27,7 @@ possible styles of usage, but the most common ones:
 7) DOM("#foo").appendChild(LI())
    - equivalently before(), after(), append(), insertBefore(), replaceWith()
 8) (x => ABBR(x.attr, x.text))(stuff)
+9) replace_content in any context where set_content is valid
 """
 import sys
 import esprima # ImportError? pip install -r requirements.txt
@@ -39,6 +40,7 @@ class Ctx:
 		Ctx.autoimport_line = -1 # If we find "//autoimport" at the end of a line, any declaration surrounding that will be edited.
 		Ctx.autoimport_range = None
 		Ctx.got_imports, Ctx.want_imports = [], set()
+		Ctx.import_source = "choc" # Will be set to "lindt" if the file uses lindt/replace_content
 		Ctx.fn = fn
 		Ctx.source_lines = []
 
@@ -160,8 +162,9 @@ def Call(el, scopes, sc):
 		descend(el.callee, scopes, "return" if sc == "set_content" else sc)
 		return
 	else: return # For now, I'm ignoring any unrecognized x.y() or x()() or anything
-	if funcname == "set_content":
+	if funcname in ("set_content", "replace_content"):
 		# Alright! We're setting content. First arg is the target, second is the content.
+		# Note that we don't validate mismatches of choc/replace_content or lindt/set_content.
 		if len(el.arguments) < 2: return # Huh. Need two args. Whatever.
 		descend(el.arguments[1], scopes, "set_content")
 		if len(el.arguments) > 2:
@@ -237,12 +240,13 @@ def VariableDeclaration(el, scopes, sc):
 		Ctx.autoimport_range = el.range
 	for decl in el.declarations:
 		if decl.init:
-			if decl.init.type == "Identifier" and decl.init.name == "choc":
+			if decl.init.type == "Identifier" and decl.init.name in ("choc", "lindt"):
 				# It's the import destructuring line.
 				if decl.id.type != "ObjectPattern": continue # Or maybe not destructuring. Whatever, you do you.
 				for prop in decl.id.properties:
 					if prop.key.type == "Identifier" and prop.key.name.isupper():
 						Ctx.got_imports.append(prop.key.name)
+				Ctx.import_source = decl.init.name
 				continue
 			# Descend into it, looking for functions; also save it in case it's used later.
 			descend(decl.init, scopes, sc)
@@ -325,7 +329,7 @@ def process(fn, *, fix=False, extcall=()):
 		print("WANT:", want)
 		if Ctx.autoimport_range:
 			start, end = Ctx.autoimport_range
-			data = data[:start] + "const {" + ", ".join(want) + "} = choc;" + data[end:]
+			data = data[:start] + "const {" + ", ".join(want) + "} = " + Ctx.import_source + ";" + data[end:]
 			# Write-back if the user wants it
 			if fn == "-": print(data)
 			if fix:

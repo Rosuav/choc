@@ -1,5 +1,21 @@
 ## Chocolate Factory version history
 
+### v1.1.0
+
+* Master chocolatiers are now available to help design your factory! See
+  [Lindt mode](lindt) for details.
+* To strengthen the similarities between choc mode and lindt mode, it's now
+  possible to import choc by name as well as by default. This allows a more
+  consistent import command, instead of having choc special-cased. It will
+  continue to (also) be the default for the foreseeable future.
+* chocimport.py recognizes both lindt and choc as valid imports. It's up to
+  you to make sure you use one or the other, or mix them compatibly.
+* Constructing a SELECT element with a value should now work - it will fill
+  the element with its contents before applying the value.
+* As a side effect of some other changes, it's possible to construct a
+  TEXTAREA with both child text and a value attribute. For compatibility
+  with lindt mode, this is considered a feature, and the value attr wins.
+
 ### v1.0.3
 
 * Special case a few more things. I clearly don't know what I'm doing here.

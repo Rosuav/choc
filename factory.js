@@ -139,20 +139,161 @@ let choc = function(tag, attributes, children) {
 	}
 	if (attributes) for (let attr in attributes) _set_attr(ret, attr, attributes[attr]);
 	if (children) set_content(ret, children);
+	//Special case: A <select> element's value is valid only if one of its child <option>s
+	//has that value. Which means that the value can only be set once it has its children.
+	//So in that very specific case, we reapply the value here at the end.
+	if (attributes && children && attributes.value && ret.tagName === "SELECT") {
+		console.log("Setting", ret, "value", attributes.value);
+		ret.value = attributes.value;
+	}
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.0.3";
+choc.__version__ = "1.1.0";
+
+export function replace_content(target, template) {
+	if (typeof target === "string") target = DOM(target);
+	let was = target._CHOC_template;
+	if (!was) {
+		//The first time you use replace_template, it functions broadly like set_content.
+		set_content(target, "");
+		was = [];
+	}
+	//In recursive calls, we could skip this JSONification. Note that this breaks embedding
+	//of DOM elements, functions in on* attributes, etc. It's best done externally if needed.
+	//template = JSON.parse(JSON.stringify(template)); //Pay some overhead to ensure separation
+	let nodes = 0; //Number of child nodes, including the contents of subarrays and pseudoelements.
+	function build_content(was, now) {
+		let ofs = 0, limit = Math.abs(was.length - now.length);
+		let delta = was < now ? -1 : 1;
+		now._CHOC_keys = {};
+		function poke(t, pred) {
+			//Flag everything that we've used, and refuse to use anything flagged,
+			//because you can't step in the same river twice.
+			if (t && !t.key && !t.river && pred(t)) {t.river = 1; return t;}
+		}
+		function search(i, pred) {
+			//Attempt to find an unkeyed entry that matches the predicate
+			let t;
+			if (t = poke(was[i + ofs * delta], pred)) return t;
+			//Search for a match in the direction of the array length change
+			let prevofs = ofs;
+			if (limit) for (++ofs; ofs <= limit; ++ofs)
+				if (t = poke(was[i + ofs * delta], pred)) return t;
+			ofs = prevofs; //If we don't find the thing, reset the search for next time.
+		}
+		return now.map((t, i) => {
+			//Strings never get usefully matched. In theory we could search for
+			//the corresponding text node, to avoid creating and destroying them,
+			//but in practice, the risk of mismatch means we'd have to do a lot
+			//of validation, reducing the savings, so we may as well stay simple.
+			if (!t) return ""; //Skip any null entries of any kind
+			//Strings and numbers get passed straight along to Choc Factory. Elements
+			//will be kept as-is, so you can move things around by tossing DOM() into
+			//your template.
+			if (typeof t === "string" || typeof t === "number") {++nodes; return t;}
+			if (t instanceof Element) {
+				//DOM elements get passed through untouched, and removed from the template.
+				now[i] = null;
+				++nodes;
+				return t;
+			}
+			if (Array.isArray(t)) {
+				//Match an array against another array. Note that an "array with a key"
+				//is actually represented as a keyed pseudoelement, not an array.
+				//It is NOT recommended to have a variable number of unkeyed arrays in
+				//an array, as any array will match any other array, potentially causing
+				//widespread deletion and recreation. In this situation, give them keys.
+				//Note that node counts are not affected by arrays themselves, only their contents.
+				return build_content(search(i, Array.isArray) || [], t);
+			}
+			//Assume t is an object.
+			if (t.key) {
+				if (now._CHOC_keys[t.key]) console.warn("Duplicate key on element!", t); //No guarantees here.
+				now._CHOC_keys[t.key] = t;
+			}
+			t.position = nodes;
+			let match = null;
+			if (t.key) {
+				const prev = was._CHOC_keys && was._CHOC_keys[t.key];
+				if (prev && prev.tag === t.tag) match = prev; //Has to match both key and tag.
+			} else {
+				//Attempt to find a match based on tag alone.
+				const tag = t.tag;
+				match = search(i, x => x.tag === tag);
+			}
+			//Four possibilities:
+			//1) Match found, has tag. Update DOM element and return it.
+			//2) Match found, no tag. Generate a pseudoelement, reusing as appropriate.
+			//3) No match, has tag. Generate a DOM element.
+			//4) No match, no tag. Generate a pseudoelement.
+			if (match) {
+				if (!t.tag) return build_content(match.children, t.children);
+				const elem = target.childNodes[match.position];
+				if (elem && elem.tagName === match.tag.toUpperCase()) {
+					//Okay, we have a match. Update attributes, update content, return.
+					let value = undefined;
+					for (let old in match.attributes)
+						//TODO: Translate these through attr_xlat and attr_assign somehow
+						if (!(old in t.attributes)) elem.removeAttribute(old);
+					for (let att in t.attributes)
+						if (!(att in match.attributes) || t.attributes[att] !== match.attributes[att]) {
+							_set_attr(elem, att, t.attributes[att]);
+							if (elem.tagName === "SELECT" && att === "value") value = t.attributes.value;
+						}
+					//The element will retain its own record of its contents.
+					++nodes;
+					replace_content(elem, t.children);
+					if (typeof value !== "undefined") elem.value = value;
+					return elem;
+				}
+				//Else fall through and make a new one. Any sort of DOM manipulation
+				//that disrupts the position markers could cause a mismatch and thus
+				//a lot of element creation and destruction, but that's better than
+				//trying to set attributes onto the wrong type of thing.
+			}
+			if (!t.tag) return build_content([], t.children); //Pseudo-element - return the array as-is.
+			++nodes;
+			const elem = replace_content(choc(t.tag, t.attributes), t.children);
+			if (elem.tagName === "SELECT" && "value" in t.attributes) elem.value = t.attributes.value;
+			return elem;
+		});
+	}
+	target._CHOC_template = template;
+	//TODO: If absolutely nothing has changed - not even text - don't set_content.
+	//This will be a common case for recursive calls to replace_content, where the
+	//corresponding section of the overall template hasn't changed.
+	const content = build_content(was, template);
+	return set_content(target, content);
+}
+
+//TODO: Unify lindt and choc. Maybe have choc call lindt and then render?
+let lindt = function(tag, attributes, children) {
+	if (arguments.length > 3) console.warn("Extra argument(s) to lindt() - did you intend to pass an array of children?");
+	if (!children && typeof tag === "object") return lindt("", tag, attributes); //Pseudoelement - lindt({key: "..."}, [...])
+	if (!attributes) attributes = { };
+	if (typeof attributes === "string" || Array.isArray(attributes) || attributes instanceof Element || attributes.tag) {
+		if (children) console.warn("Extra argument(s) to lindt() - did you intend to pass an array of children?");
+		children = attributes;
+		attributes = { };
+	}
+	if (!children) children = [];
+	else if (!Array.isArray(children)) children = [children];
+	return {tag, attributes, children, key: attributes.key};
+};
 
 //Interpret choc.DIV(attr, chld) as choc("DIV", attr, chld)
 //This is basically what Python would do as choc.__getattr__()
-choc = new Proxy(choc, {get: function(obj, prop) {
+function autobind(obj, prop) {
 	if (prop in obj) return obj[prop];
 	return obj[prop] = obj.bind(null, prop);
-}});
+}
+choc = new Proxy(choc, {get: autobind});
+lindt = new Proxy(lindt, {get: autobind});
 
 //For modules, make the main entry-point easily available.
 export default choc;
+export {choc, lindt};
 
 //For non-module scripts, allow some globals to be used. Also useful at the console.
 window.choc = choc; window.set_content = set_content; window.on = on; window.DOM = DOM; window.fix_dialogs = fix_dialogs;
