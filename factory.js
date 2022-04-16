@@ -120,6 +120,12 @@ export function fix_dialogs(cfg) {
 const attr_xlat = {classname: "class", htmlfor: "for"};
 const attr_assign = {volume: 1, value: 1}; //Another weird compat hack, no idea why
 
+//Exported but with no guarantee of forward compatibility, this is (currently) for internal use.
+export function _set_attr(elem, attr, val) {
+	if (attr.startsWith("on") || attr_assign[attr]) elem[attr] = val; //Events should be created with on(), but can be done this way too.
+	else elem.setAttribute(attr_xlat[attr.toLowerCase()] || attr, val);
+}
+
 let choc = function(tag, attributes, children) {
 	const ret = document.createElement(tag);
 	//If called as choc(tag, children), assume all attributes are defaults
@@ -131,10 +137,7 @@ let choc = function(tag, attributes, children) {
 		if (children) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 		return set_content(ret, attributes);
 	}
-	if (attributes) for (let attr in attributes) {
-		if (attr.startsWith("on") || attr_assign[attr]) ret[attr] = attributes[attr]; //Events should be created with on(), but can be done this way too.
-		else ret.setAttribute(attr_xlat[attr.toLowerCase()] || attr, attributes[attr]);
-	}
+	if (attributes) for (let attr in attributes) _set_attr(ret, attr, attributes[attr]);
 	if (children) set_content(ret, children);
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
