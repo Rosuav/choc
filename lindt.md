@@ -20,7 +20,7 @@ Here's how you make your own chocolate:
 
 Here's how you get a chocolatier to make it for you:
 
-    import {lindt, set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
+    import {lindt, replace_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
     const {FORM, INPUT, LABEL} = lindt; //autoimport
     replace_content("body", FORM(
         LABEL(["Speak thy mind:", INPUT({name: "thought"})])
