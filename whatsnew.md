@@ -1,5 +1,9 @@
 ## Chocolate Factory version history
 
+### v1.1.1
+
+* replace_content now accepts a single element rather than requiring an array.
+
 ### v1.1.0
 
 * Master chocolatiers are now available to help design your factory! See

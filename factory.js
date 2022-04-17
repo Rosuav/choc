@@ -149,7 +149,7 @@ let choc = function(tag, attributes, children) {
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.1.0";
+choc.__version__ = "1.1.1";
 
 export function replace_content(target, template) {
 	if (typeof target === "string") target = DOM(target);
@@ -159,6 +159,7 @@ export function replace_content(target, template) {
 		set_content(target, "");
 		was = [];
 	}
+	if (!Array.isArray(template)) template = [template];
 	//In recursive calls, we could skip this JSONification. Note that this breaks embedding
 	//of DOM elements, functions in on* attributes, etc. It's best done externally if needed.
 	//template = JSON.parse(JSON.stringify(template)); //Pay some overhead to ensure separation
