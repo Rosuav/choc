@@ -20,4 +20,6 @@ using the library requires just one file, factory.js.
 
 [How to use the Chocolate Factory](docs)
 
+[Templating the Chocolate Factory](lindt)
+
 [What's New (change history)](whatsnew)
