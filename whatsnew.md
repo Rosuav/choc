@@ -1,5 +1,11 @@
 ## Chocolate Factory version history
 
+### v1.1.2
+
+* Handle disabled and checked status through assignment. These could probably
+  be done better with proper boolean handling, but they might still need to be
+  special cases anyway.
+
 ### v1.1.1
 
 * replace_content now accepts a single element rather than requiring an array.

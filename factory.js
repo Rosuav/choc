@@ -118,7 +118,7 @@ export function fix_dialogs(cfg) {
 
 //Compatibility hack for those attributes where not ret[attr] <=> ret.setAttribute(attr). Might be made externally mutable? Maybe?
 const attr_xlat = {classname: "class", htmlfor: "for"};
-const attr_assign = {volume: 1, value: 1}; //Another weird compat hack, no idea why
+const attr_assign = {volume: 1, value: 1, disabled: 1, checked: 1}; //Another weird compat hack, no idea why
 
 //Exported but with no guarantee of forward compatibility, this is (currently) for internal use.
 export function _set_attr(elem, attr, val) {
@@ -149,7 +149,7 @@ let choc = function(tag, attributes, children) {
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.1.1";
+choc.__version__ = "1.1.2";
 
 export function replace_content(target, template) {
 	if (typeof target === "string") target = DOM(target);
