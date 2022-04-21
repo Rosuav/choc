@@ -42,6 +42,7 @@ function append_child(elem, child) {
 }
 
 export function set_content(elem, children) {
+	if (arguments.length > 2) console.warn("Extra argument(s) to set_content() - did you intend to pass an array of children?");
 	if (typeof elem === "string") {
 		const el = DOM(elem);
 		if (!el) throw new Error("No element found for set_content: '" + elem + "'");
@@ -149,7 +150,7 @@ let choc = function(tag, attributes, children) {
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.1.2";
+choc.__version__ = "1.1.3";
 
 export function replace_content(target, template) {
 	if (typeof target === "string") target = DOM(target);

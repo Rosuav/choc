@@ -1,5 +1,10 @@
 ## Chocolate Factory version history
 
+### v1.1.3
+
+* Give the same warning on set_content() that choc() and lindt() do when extra
+  args are provided.
+
 ### v1.1.2
 
 * Handle disabled and checked status through assignment. These could probably
