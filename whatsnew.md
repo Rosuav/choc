@@ -1,5 +1,10 @@
 ## Chocolate Factory version history
 
+### v1.1.4
+
+* Support `choc.TAG(42)` as equivalent to `choc.TAG("42")` - it was already
+  supported if attributes were given.
+
 ### v1.1.3
 
 * Give the same warning on set_content() that choc() and lindt() do when extra

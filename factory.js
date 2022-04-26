@@ -130,7 +130,7 @@ export function _set_attr(elem, attr, val) {
 let choc = function(tag, attributes, children) {
 	const ret = document.createElement(tag);
 	//If called as choc(tag, children), assume all attributes are defaults
-	if (typeof attributes === "string" || attributes instanceof Array || attributes instanceof Element) {
+	if (typeof attributes === "string" || typeof attributes === "number" || attributes instanceof Array || attributes instanceof Element) {
 		//But if called as choc(tag, child, child), that was probably an error.
 		//It's also possible someone tried to call choc(tag, child, attr); in
 		//that case, the warning will be slightly confusing, but still point to
@@ -150,7 +150,7 @@ let choc = function(tag, attributes, children) {
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.1.3";
+choc.__version__ = "1.1.4";
 
 export function replace_content(target, template) {
 	if (typeof target === "string") target = DOM(target);
@@ -274,7 +274,7 @@ let lindt = function(tag, attributes, children) {
 	if (arguments.length > 3) console.warn("Extra argument(s) to lindt() - did you intend to pass an array of children?");
 	if (!children && typeof tag === "object") return lindt("", tag, attributes); //Pseudoelement - lindt({key: "..."}, [...])
 	if (!attributes) attributes = { };
-	if (typeof attributes === "string" || Array.isArray(attributes) || attributes instanceof Element || attributes.tag) {
+	if (typeof attributes === "string" || typeof attributes === "number" || Array.isArray(attributes) || attributes instanceof Element || attributes.tag) {
 		if (children) console.warn("Extra argument(s) to lindt() - did you intend to pass an array of children?");
 		children = attributes;
 		attributes = { };
