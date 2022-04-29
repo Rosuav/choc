@@ -27,7 +27,9 @@ the given tag, attributes, and contents. Both attributes and contents are
 optional, but if both are given, must be in that order.
 
 To replace the contents of a DOM element:
+
     set_content(element, contents);
+
 The element can be either an actual DOM element or a selector. The contents
 can be a DOM element (eg created by choc() above), or a text string, or an
 array of elements, strings, and arrays. Text strings will NOT be interpreted
@@ -37,7 +39,9 @@ update a single element only, and will raise an error if multiple elements
 
 Hooking events can be done by selector. Internally this attaches the event
 to the document, so dynamically-created objects can still respond to events.
+
     on("click", ".some-class", e => {console.log("Hello");});
+
 To distinguish between multiple objects that potentially match, e.match
 will be set to the object that received the event. (This is distinct from
 e.target and e.currentTarget.) NOTE: e.match is wiped after the event
@@ -47,16 +51,19 @@ the event handler attached to the capturing phase instead. Important for some
 types of events, irrelevant for others.
 
 For other manipulations of DOM objects, start by locating one by its selector:
+
     DOM('input[name="thought"]').value = "..."
+
 This is like document.querySelector(), but ensures that there is only one
 matching element, thus avoiding the risk of catching the wrong one. (It's also
 shorter. Way shorter.)
 
 ## Extra tricks
 
-If you use the <dialog> tag, consider fix_dialogs(). It adds basic support to
+If you use the `<dialog>` tag, consider `fix_dialogs()`. It adds basic support to
 browsers which lack it, and can optionally provide automatic behaviour for
 close buttons and/or clicking outside the dialog to close it.
+
     import choc, {set_content, on, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
     fix_dialogs({close_selector: "button.close,input[type=submit]"});
     fix_dialogs({click_outside: true});
