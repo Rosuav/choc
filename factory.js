@@ -144,7 +144,6 @@ let choc = function(tag, attributes, children) {
 	//has that value. Which means that the value can only be set once it has its children.
 	//So in that very specific case, we reapply the value here at the end.
 	if (attributes && children && attributes.value && ret.tagName === "SELECT") {
-		console.log("Setting", ret, "value", attributes.value);
 		ret.value = attributes.value;
 	}
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
