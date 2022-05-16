@@ -123,7 +123,14 @@ const attr_assign = {volume: 1, value: 1, disabled: 1, checked: 1}; //Another we
 
 //Exported but with no guarantee of forward compatibility, this is (currently) for internal use.
 export function _set_attr(elem, attr, val) {
-	if (attr.startsWith("on") || attr_assign[attr]) elem[attr] = val; //Events should be created with on(), but can be done this way too.
+	if (attr[0] === '.') elem[attr.slice(1)] = val; //Explicit assignment. Doesn't use xlat, though maybe it should do it in reverse?
+	else if (attr[0] === '@') { //Explicit set-attribute
+		attr = attr.slice(1);
+		elem.setAttribute(attr_xlat[attr.toLowerCase()] || attr, val);
+	}
+	//Otherwise pick what we think is most likely to be right. It often won't matter,
+	//in which case we'll setAttribute by default.
+	else if (attr.startsWith("on") || attr_assign[attr]) elem[attr] = val; //Events should be created with on(), but can be done this way too.
 	else elem.setAttribute(attr_xlat[attr.toLowerCase()] || attr, val);
 }
 
@@ -257,6 +264,7 @@ export function replace_content(target, template) {
 			++nodes;
 			const elem = replace_content(choc(t.tag, t.attributes), t.children);
 			if (elem.tagName === "SELECT" && "value" in t.attributes) elem.value = t.attributes.value;
+			else if (elem.tagName === "SELECT" && ".value" in t.attributes) elem.value = t.attributes[".value"];
 			return elem;
 		});
 	}

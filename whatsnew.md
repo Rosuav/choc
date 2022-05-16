@@ -1,5 +1,11 @@
 ## Chocolate Factory version history
 
+### v1.2.0
+
+* Attributes can be specified as `{"@attr": "val"}` or `{".attr": "val"}` to
+  force them to use setAttribute or subscript assignment respectively. The
+  default behaviour will continue to autodetect.
+
 ### v1.1.4
 
 * Support `choc.TAG(42)` as equivalent to `choc.TAG("42")` - it was already
