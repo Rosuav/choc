@@ -58,10 +58,12 @@ export function on(event, selector, handler, options) {
 	if (handlers[event]) return handlers[event].push([selector, handler]);
 	handlers[event] = [[selector, handler]];
 	document.addEventListener(event, e => {
-		//Reimplement bubbling ourselves
+		//Reimplement bubbling ourselves. Note that the cancelBubble attribute is
+		//deprecated, but still seems to work (calling e.stopPropagation() will
+		//set this attribute), so we use it.
 		const top = e.currentTarget; //Generic in case we later allow this to attach to other than document
 		let cur = e.target;
-		while (cur && cur !== top) {
+		while (cur && cur !== top && !e.cancelBubble) {
 			e.match = cur; //We can't mess with e.currentTarget without synthesizing our own event object. Easier to make a new property.
 			handlers[event].forEach(([s, h]) => cur.matches(s) && h(e));
 			cur = cur.parentNode;
@@ -156,7 +158,7 @@ let choc = function(tag, attributes, children) {
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.1.4";
+choc.__version__ = "1.3.0";
 
 export function replace_content(target, template) {
 	if (typeof target === "string") target = DOM(target);

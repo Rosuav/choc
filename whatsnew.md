@@ -1,5 +1,11 @@
 ## Chocolate Factory version history
 
+### v1.3.0
+
+* Calling `e.stopPropagation()` during an on() handler will now correctly
+  end the bubbling of the event. While arguably a bugfix, this is potentially
+  a feature of a sort, I guess?
+
 ### v1.2.0
 
 * Attributes can be specified as `{"@attr": "val"}` or `{".attr": "val"}` to
