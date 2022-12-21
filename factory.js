@@ -158,11 +158,11 @@ let choc = function(tag, attributes, children) {
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.3.0";
+choc.__version__ = "1.4.0";
 
 export function replace_content(target, template) {
 	if (typeof target === "string") target = DOM(target);
-	let was = target._CHOC_template;
+	let was = target ? target._CHOC_template : [];
 	if (!was) {
 		//The first time you use replace_template, it functions broadly like set_content.
 		set_content(target, "");
@@ -270,6 +270,7 @@ export function replace_content(target, template) {
 			return elem;
 		});
 	}
+	if (!target) return build_content(was, template)[0];
 	target._CHOC_template = template;
 	//TODO: If absolutely nothing has changed - not even text - don't set_content.
 	//This will be a common case for recursive calls to replace_content, where the

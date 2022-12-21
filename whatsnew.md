@@ -1,5 +1,12 @@
 ## Chocolate Factory version history
 
+### v1.4.0
+
+* `replace_content(null, lindt.P())` is now broadly equivalent to `choc.P()`,
+  allowing a lindt-based script to turn a template into concrete DOM objects
+  for when it won't be replaced into something else. This has no benefit over
+  using choc directly.
+
 ### v1.3.0
 
 * Calling `e.stopPropagation()` during an on() handler will now correctly
