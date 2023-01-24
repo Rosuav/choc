@@ -23,3 +23,5 @@ using the library requires just one file, factory.js.
 [Templating the Chocolate Factory](lindt)
 
 [What's New (change history)](whatsnew)
+
+[The Code](factory.js)
