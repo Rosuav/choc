@@ -1,6 +1,8 @@
 The Chocolate Factory
 =====================
 
+(Are you reading this at it's [source](https://rosuav.github.io/choc)?)
+
 The Chocolate Factory is a lightweight JavaScript DOM manipulation library,
 inspired both positively and negatively by jQuery, React.js, and others.
 Its goals are:
