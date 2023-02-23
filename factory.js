@@ -1,5 +1,7 @@
 /* The Chocolate Factory (Thanks to DeviCat for the name!)
 
+Documentation: https://rosuav.github.io/choc/
+
 The MIT License (MIT)
 
 Copyright (c) 2022 Chris Angelico
