@@ -40,7 +40,9 @@ function append_child(elem, child) {
 		return;
 	}
 	if (typeof child === "string" || typeof child === "number") child = document.createTextNode(child);
-	elem.appendChild(child);
+	if (child instanceof Node) elem.appendChild(child);
+	else throw new Error("Attempted to insert non-Node object into document",
+		{cause: {elem, child}});
 }
 
 export function set_content(elem, children) {
@@ -160,7 +162,7 @@ let choc = function(tag, attributes, children) {
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.4.0";
+choc.__version__ = "1.5.0";
 
 export function replace_content(target, template) {
 	if (typeof target === "string") target = DOM(target);

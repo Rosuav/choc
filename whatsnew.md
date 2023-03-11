@@ -1,5 +1,12 @@
 ## Chocolate Factory version history
 
+### v1.5.0
+
+* Attempting to insert a non-Node object into something (with set_content, the
+  choc constructor, or any other form) will now raise an error. This is usually
+  indicative of a bug anyway, and would most likely have caused a more obscure
+  failure.
+
 ### v1.4.0
 
 * `replace_content(null, lindt.P())` is now broadly equivalent to `choc.P()`,
