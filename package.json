@@ -1,0 +1,19 @@
+{
+	"name": "choc",
+	"version": "1.5.0",
+	"description": "Simple JS front end library",
+	"main": "factory.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Rosuav/choc.git"
+	},
+	"author": "Chris Angelico (rosuav@gmail.com)",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/Rosuav/choc/issues"
+	},
+	"homepage": "https://github.com/Rosuav/choc#readme"
+}
