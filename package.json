@@ -1,5 +1,5 @@
 {
-	"name": "choc",
+	"name": "chocfactory",
 	"version": "1.5.0",
 	"description": "Simple JS front end library",
 	"main": "factory.js",
