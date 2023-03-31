@@ -15,5 +15,9 @@
 	"bugs": {
 		"url": "https://github.com/Rosuav/choc/issues"
 	},
-	"homepage": "https://github.com/Rosuav/choc#readme"
+	"homepage": "https://github.com/Rosuav/choc#readme",
+	"type": "module",
+	"devDependencies": {
+		"espree": "^9.5.1"
+	}
 }
