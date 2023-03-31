@@ -30,6 +30,7 @@ possible styles of usage, but the most common ones:
 9) replace_content in any context where set_content is valid
 */
 import * as espree from "espree";
+import fs from "node:fs";
 
 const DOM_ADDITION_METHODS = {appendChild:1, before:1, after:1, append:1, insertBefore:1, replaceWith:1}
 
@@ -302,7 +303,7 @@ function descend(el, scopes, sc) {
 function process(fn, fix=false, extcall=[]) {
 	Ctx.reset(fn);
 	let data = "";
-	if (fn !== "-") data = fs.readFileSync(fn);
+	if (fn !== "-") data = fs.readFileSync(fn, {encoding: "utf8"});
 	else data = `
 		import choc, {set_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
 		const {FORM, LABEL, INPUT} = choc; //autoimport
@@ -374,6 +375,19 @@ function process(fn, fix=false, extcall=[]) {
 	}
 }
 
-//TODO: Parse args as per chocimport.py
-//For now, quick hack.
-process("-");
+export function main(argv) {
+	let fix = false, extcall = [], files = [];
+	argv.forEach(arg => {
+		if (arg === "--fix") fix = true;
+		else if (arg.startsWith("--extcall="))
+			extcall.push(arg.slice("--extcall=".length));
+		else if (arg.startsWith("-"))
+			console.error("Unrecognized parameter " + arg);
+		else files.push(arg);
+	});
+	files.forEach(fn => process(fn, fix, extcall));
+}
+
+//TODO: Guard this with the equivalent of if __name__ == "__main__"
+import {argv} from "node:process";
+main(argv.slice(2));
