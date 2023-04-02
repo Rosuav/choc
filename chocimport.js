@@ -184,7 +184,7 @@ const elements = {
 		descend(el.argument, scopes, sc);
 	},
 
-	ExpressionStatement(el, scopes, sc) {
+	["ExpressionStatement ChainExpression"]: (el, scopes, sc) => {
 		descend(el.expression, scopes, sc);
 	},
 
@@ -389,5 +389,6 @@ export function main(argv) {
 }
 
 //TODO: Guard this with the equivalent of if __name__ == "__main__"
+//and then replace the whole fn=="-" thing with actual tests
 import {argv} from "node:process";
 main(argv.slice(2));
