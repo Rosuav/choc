@@ -67,7 +67,8 @@ Stuff to keep in mind
   - Setting the value on a newly-created input will set its default/initial value
   - Keeping the template unchanged will allow the user to make changes, which are
     not affected by rerendering through replace_content
-  - Changing the value in the template will change the input's contents to that value
+  - Changing the value in the template will change the input's contents to that
+    value, as long as it isn't already set to that.
   - It is NOT possible to query an input, then force it back to its default by
     re-assigning that. To accomplish this, the easiest way is to explicitly set the
     input's value; it may also be possible to trick replace_content into doing this

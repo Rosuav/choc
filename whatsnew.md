@@ -1,5 +1,11 @@
 ## Chocolate Factory version history
 
+### v1.6.0
+
+* Reduce flicker and improve performance in replace_content(). Should™ be
+  entirely backward compatible. Lindt mode will now make better use of existing
+  DOM elements, and will avoid rebuilding contents where possible.
+
 ### v1.5.0
 
 * Attempting to insert a non-Node object into something (with set_content, the

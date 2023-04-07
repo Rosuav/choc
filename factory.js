@@ -162,7 +162,6 @@ let choc = function(tag, attributes, children) {
 	if (arguments.length > 3) console.warn("Extra argument(s) to choc() - did you intend to pass an array of children?");
 	return ret;
 }
-choc.__version__ = "1.5.0";
 
 export function replace_content(target, template) {
 	if (typeof target === "string") target = DOM(target);
@@ -259,6 +258,13 @@ export function replace_content(target, template) {
 						if (!(old in t.attributes)) {pristine = false; elem.removeAttribute(old);}
 					for (let att in t.attributes)
 						if (!(att in match.attributes) || t.attributes[att] !== match.attributes[att]) {
+							if (elem.tagName === "INPUT" && att === "value") {
+								//Special-case value to better handle inputs. If you update
+								//the template to the value it currently has, it's not a
+								//change; and if you don't update the value at all, it's not
+								//a change either, to allow easy unmanaged inputs.
+								if (elem.value === t.attributes[att]) continue;
+							}
 							pristine = false;
 							_set_attr(elem, att, t.attributes[att]);
 							if (elem.tagName === "SELECT" && att === "value") value = t.attributes.value;
@@ -267,6 +273,8 @@ export function replace_content(target, template) {
 					++nodes;
 					replace_content(elem, t.children);
 					if (typeof value !== "undefined") elem.value = value;
+					//Set focus back to an element that previously had it.
+					if (elem === document.activeElement) setTimeout(() => elem.focus(), 0);
 					return elem;
 				}
 				//Else fall through and make a new one. Any sort of DOM manipulation
@@ -316,6 +324,8 @@ function autobind(obj, prop) {
 }
 choc = new Proxy(choc, {get: autobind});
 lindt = new Proxy(lindt, {get: autobind});
+
+choc.__version__ = "1.6.0";
 
 //For modules, make the main entry-point easily available.
 export default choc;
