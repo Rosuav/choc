@@ -179,7 +179,7 @@ export function replace_content(target, template) {
 	let nodes = 0; //Number of child nodes, including the contents of subarrays and pseudoelements.
 	function build_content(was, now) {
 		let ofs = 0, limit = Math.abs(was.length - now.length);
-		let delta = was < now ? -1 : 1;
+		let delta = was.length < now.length ? -1 : 1;
 		now._CHOC_keys = {};
 		function poke(t, pred) {
 			//Flag everything that we've used, and refuse to use anything flagged,
