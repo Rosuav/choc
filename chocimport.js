@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*
 Analyze a JavaScript module for Chocolate Factory usage and update an import
 
