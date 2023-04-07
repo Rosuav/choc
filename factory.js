@@ -177,6 +177,7 @@ export function replace_content(target, template) {
 	//of DOM elements, functions in on* attributes, etc. It's best done externally if needed.
 	//template = JSON.parse(JSON.stringify(template)); //Pay some overhead to ensure separation
 	let nodes = 0; //Number of child nodes, including the contents of subarrays and pseudoelements.
+	let pristine = true; //False if we make any change, no matter how slight. Err on the side of setting it false unnecessarily.
 	function build_content(was, now) {
 		let ofs = 0, limit = Math.abs(was.length - now.length);
 		let delta = was.length < now.length ? -1 : 1;
@@ -190,6 +191,7 @@ export function replace_content(target, template) {
 			//Attempt to find an unkeyed entry that matches the predicate
 			let t;
 			if (t = poke(was[i + ofs * delta], pred)) return t;
+			pristine = false;
 			//Search for a match in the direction of the array length change
 			let prevofs = ofs;
 			if (limit) for (++ofs; ofs <= limit; ++ofs)
@@ -205,9 +207,14 @@ export function replace_content(target, template) {
 			//Strings and numbers get passed straight along to Choc Factory. Elements
 			//will be kept as-is, so you can move things around by tossing DOM() into
 			//your template.
-			if (typeof t === "string" || typeof t === "number") {++nodes; return t;}
+			if (typeof t === "string" || typeof t === "number") {
+				if (was[i] !== t) pristine = false;
+				++nodes;
+				return t;
+			}
 			if (t instanceof Element) {
 				//DOM elements get passed through untouched, and removed from the template.
+				if (was[i] !== null) pristine = false;
 				now[i] = null;
 				++nodes;
 				return t;
@@ -249,9 +256,10 @@ export function replace_content(target, template) {
 					let value = undefined;
 					for (let old in match.attributes)
 						//TODO: Translate these through attr_xlat and attr_assign somehow
-						if (!(old in t.attributes)) elem.removeAttribute(old);
+						if (!(old in t.attributes)) {pristine = false; elem.removeAttribute(old);}
 					for (let att in t.attributes)
 						if (!(att in match.attributes) || t.attributes[att] !== match.attributes[att]) {
+							pristine = false;
 							_set_attr(elem, att, t.attributes[att]);
 							if (elem.tagName === "SELECT" && att === "value") value = t.attributes.value;
 						}
@@ -267,6 +275,7 @@ export function replace_content(target, template) {
 				//trying to set attributes onto the wrong type of thing.
 			}
 			if (!t.tag) return build_content([], t.children); //Pseudo-element - return the array as-is.
+			pristine = false;
 			++nodes;
 			const elem = replace_content(choc(t.tag, t.attributes), t.children);
 			if (elem.tagName === "SELECT" && "value" in t.attributes) elem.value = t.attributes.value;
@@ -280,6 +289,7 @@ export function replace_content(target, template) {
 	//This will be a common case for recursive calls to replace_content, where the
 	//corresponding section of the overall template hasn't changed.
 	const content = build_content(was, template);
+	if (pristine) return target;
 	return set_content(target, content);
 }
 
