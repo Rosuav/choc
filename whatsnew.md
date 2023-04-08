@@ -1,5 +1,10 @@
 ## Chocolate Factory version history
 
+### v1.6.1
+
+* Bugfix the flicker reduction - catch some instances where it was overeager
+  in this optimization, resulting in incorrect display.
+
 ### v1.6.0
 
 * Reduce flicker and improve performance in replace_content(). Should™ be
