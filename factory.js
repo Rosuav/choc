@@ -301,7 +301,7 @@ export function replace_content(target, template) {
 	//any DOM elements directly inserted (which won't have a .river attribute),
 	//and any Lindt template objects that haven't been probed.
 	was.forEach(t => {
-		if (typeof t === "object" && !Array.isArray(t) && !t.river) pristine = false;
+		if (t && typeof t === "object" && !Array.isArray(t) && !t.river) pristine = false;
 	});
 	if (pristine) return target;
 	return set_content(target, content);
@@ -331,7 +331,7 @@ function autobind(obj, prop) {
 choc = new Proxy(choc, {get: autobind});
 lindt = new Proxy(lindt, {get: autobind});
 
-choc.__version__ = "1.6.1";
+choc.__version__ = "1.6.2";
 
 //For modules, make the main entry-point easily available.
 export default choc;
