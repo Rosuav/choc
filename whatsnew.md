@@ -1,6 +1,6 @@
 ## Chocolate Factory version history
 
-### v1.6.1 and v1.6.2
+### v1.6.1, v1.6.2, v1.6.3
 
 * Bugfix the flicker reduction - catch some instances where it was overeager
   in this optimization, resulting in incorrect display.

@@ -202,7 +202,7 @@ export function replace_content(target, template) {
 			//the corresponding text node, to avoid creating and destroying them,
 			//but in practice, the risk of mismatch means we'd have to do a lot
 			//of validation, reducing the savings, so we may as well stay simple.
-			if (!t) return ""; //Skip any null entries of any kind
+			if (!t) {if (was[i]) pristine = false; return "";} //Skip any null entries of any kind
 			//Strings and numbers get passed straight along to Choc Factory. Elements
 			//will be kept as-is, so you can move things around by tossing DOM() into
 			//your template.
@@ -331,7 +331,7 @@ function autobind(obj, prop) {
 choc = new Proxy(choc, {get: autobind});
 lindt = new Proxy(lindt, {get: autobind});
 
-choc.__version__ = "1.6.2";
+choc.__version__ = "1.6.3";
 
 //For modules, make the main entry-point easily available.
 export default choc;
