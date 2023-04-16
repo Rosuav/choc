@@ -181,6 +181,7 @@ export function replace_content(target, template) {
 		let ofs = 0, limit = Math.abs(was.length - now.length);
 		let delta = was.length < now.length ? -1 : 1;
 		now._CHOC_keys = {};
+		if (was.length !== now.length) pristine = false;
 		function poke(t, pred) {
 			//Flag everything that we've used, and refuse to use anything flagged,
 			//because you can't step in the same river twice.
@@ -331,7 +332,7 @@ function autobind(obj, prop) {
 choc = new Proxy(choc, {get: autobind});
 lindt = new Proxy(lindt, {get: autobind});
 
-choc.__version__ = "1.6.3";
+choc.__version__ = "1.6.4";
 
 //For modules, make the main entry-point easily available.
 export default choc;
