@@ -8,7 +8,7 @@ Using the Chocolate Factory in a module script is easy:
     const {FORM, INPUT, LABEL} = choc; //autoimport
     set_content("body", FORM(
         LABEL(["Speak thy mind:", INPUT({name: "thought"})])
-    );
+    ));
 
 
 
