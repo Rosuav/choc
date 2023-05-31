@@ -105,8 +105,10 @@ function. For example:
 
     on("click", "button", async e => {
         console.log(e.match); //Works
+        const self = e.match;
         await something();
         console.log(e.match); //Is now null
+        console.log(self); //This will work though
     });
 
     //the same is true for other forms of asynchronicity:
