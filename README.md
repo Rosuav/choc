@@ -20,7 +20,9 @@ Its goals are:
 This repository also includes tools related to the Chocolate Factory, but
 using the library requires just one file, factory.js.
 
-[How to use the Chocolate Factory](docs)
+[API documentation](docs)
+
+[How to use the Chocolate Factory](usage)
 
 [Templating the Chocolate Factory](lindt)
 
