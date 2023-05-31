@@ -2,13 +2,13 @@
 
 ## API documentation
 
-### choc.__version__ - currently-loaded library version
+### `choc.__version__` - currently-loaded library version
 
 `choc.__version__` is a string consisting of three parts, major/minor/revision,
 such as `"1.6.4"`. See [What's New](whatsnew) for details on what changed in
 each version.
 
-### choc - Construct a DOM element
+### `choc` - Construct a DOM element
 
     element = choc("TAG", attributes, contents);
 
@@ -39,7 +39,7 @@ A destructuring import makes this more convenient:
 
 This is the recommended idiom, and can be managed by use of the chocimport script.
 
-### DOM - Locate a DOM element
+### `DOM` - Locate a DOM element
 
     element = DOM(selector);
 
@@ -54,7 +54,7 @@ and jQuery's selection. Their behaviours differ when zero or multiple elements m
 * jQuery will always return a collection and then apply changes to them all. This is
   not an error if no elements match, and changes will be applied to no elements.
 
-### set_content - Populate a DOM element
+### `set_content` - Populate a DOM element
 
     element = set_content(elem_or_sel, contents);
 
@@ -71,7 +71,7 @@ and jQuery's selection. Their behaviours differ when zero or multiple elements m
   - Note that nested arrays are valid, but arrays containing themselves are
     not, and will get your page stuck in an infinite loop :)
 
-### on - Respond to DOM events
+### `on` - Respond to DOM events
 
     idx = on(event, selector, callback, options);
 
@@ -117,7 +117,7 @@ function. For example:
         }, 1000);
     });
 
-### fix_dialogs - Provide extra functionality and compatibility for dialogs
+### `fix_dialogs` - Provide extra functionality and compatibility for dialogs
 
     fix_dialogs({
         close_selector: selector,
@@ -138,7 +138,7 @@ of functionality. Additional features can be selected, all are optional:
   the dialog. If the string `"formless"`, this applies only when the dialog
   doesn't contain a `form` element.
 
-### lindt - Construct an element template
+### `lindt` - Construct an element template
 
     template = lindt("TAG", attributes, contents);
 
@@ -158,7 +158,7 @@ Analogous to choc() but for templated usage.
 
 The `lindt` function is useful only in conjunction with `replace_content`.
 
-### replace_content - Apply an element template
+### `replace_content` - Apply an element template
 
     element = replace_content(elem_or_sel, template);
 
