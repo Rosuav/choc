@@ -1,7 +1,12 @@
 ## Chocolate Factory version history
 
-### (next)
+### v1.7.0
 
+* Implement rudimentary support for XML namespaces such as inline SVG elements.
+  They are created with `choc("some_namespace:tag")` (or lindt) and may either
+  have the complete namespace included directly, or use an alias via xmlns_xlat
+  for convenience. See [the API documentation](docs) and [SVG usage](svg) for
+  further information.
 * Bugfix: Correct autoimport recognition of renaming imports such as
   `const {FOO:BAR} = choc; //autoimport` - they will now correctly use BAR.
 

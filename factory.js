@@ -140,8 +140,14 @@ export function _set_attr(elem, attr, val) {
 	else elem.setAttribute(attr_xlat[attr.toLowerCase()] || attr, val);
 }
 
+export const xmlns_xlat = {svg: "http://www.w3.org/2000/svg"};
+
 let choc = function(tag, attributes, children) {
-	const ret = document.createElement(tag);
+	const parts = tag.split(":");
+	const tagname = parts.pop(), ns = parts.join(":");
+	const ret = ns
+		? document.createElementNS(xmlns_xlat[ns] || ns, tagname) //XML element with namespace eg choc("svg:svg")
+		: document.createElement(tagname); //HTML element
 	//If called as choc(tag, children), assume all attributes are defaults
 	if (typeof attributes === "string" || typeof attributes === "number" || attributes instanceof Array || attributes instanceof Element) {
 		//But if called as choc(tag, child, child), that was probably an error.
@@ -332,7 +338,7 @@ function autobind(obj, prop) {
 choc = new Proxy(choc, {get: autobind});
 lindt = new Proxy(lindt, {get: autobind});
 
-choc.__version__ = "1.6.4";
+choc.__version__ = "1.7.0";
 
 //For modules, make the main entry-point easily available.
 export default choc;

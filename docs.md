@@ -12,6 +12,9 @@ each version.
 
     element = choc("TAG", attributes, contents);
 
+* The tag should be a string, either with no colon (case insensitive, HTML tag),
+  or of the form "namespace:tagname" for XML tags. Namespace aliases can be used
+  (see `xmlns_xlat` below), or include the full namespace URI.
 * `attributes` - optional object mapping attribute names to their desired
   values. If omitted/null/empty, no attributes will be set.
   - Attributes will be set using `element.setAttribute` or by direct assignment
@@ -199,6 +202,15 @@ Recommended best practice:
   present. For optional arrays, use pseudo-elements instead - construct a
   lindt template with no tag, which will behave like an array of elements but
   can be given a key.
+
+### `xmlns_xlat` - Translate namespace aliases into URIs
+
+(New in 1.7.0)
+
+    xmlns_xlat.math = "http://www.w3.org/1998/Math/MathML";
+
+This mapping of aliases to URIs may be externally mutated to create new aliases
+as needed. It comes prepopulated with the alias `svg` for http://www.w3.org/2000/svg.
 
 ### Compatibility features
 
