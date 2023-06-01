@@ -244,8 +244,8 @@ def VariableDeclaration(el, scopes, sc):
 				# It's the import destructuring line.
 				if decl.id.type != "ObjectPattern": continue # Or maybe not destructuring. Whatever, you do you.
 				for prop in decl.id.properties:
-					if prop.key.type == "Identifier" and prop.key.name.isupper():
-						Ctx.got_imports.append(prop.key.name)
+					if prop.value.type == "Identifier" and prop.value.name.isupper():
+						Ctx.got_imports.append(prop.value.name)
 				Ctx.import_source = decl.init.name
 				continue
 			# Descend into it, looking for functions; also save it in case it's used later.

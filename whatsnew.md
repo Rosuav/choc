@@ -1,5 +1,10 @@
 ## Chocolate Factory version history
 
+### (next)
+
+* Bugfix: Correct autoimport recognition of renaming imports such as
+  `const {FOO:BAR} = choc; //autoimport` - they will now correctly use BAR.
+
 ### v1.6.1, v1.6.2, v1.6.3, v1.6.4
 
 * Bugfix the flicker reduction - catch some instances where it was overeager
