@@ -39,7 +39,7 @@ class Ctx:
 	def reset(cls, fn="-"):
 		Ctx.autoimport_line = -1 # If we find "//autoimport" at the end of a line, any declaration surrounding that will be edited.
 		Ctx.autoimport_range = None
-		Ctx.got_imports, Ctx.want_imports = [], set()
+		Ctx.got_imports, Ctx.want_imports = { }, { }
 		Ctx.import_source = "choc" # Will be set to "lindt" if the file uses lindt/replace_content
 		Ctx.fn = fn
 		Ctx.source_lines = []
@@ -181,7 +181,7 @@ def Call(el, scopes, sc):
 				descend(scope[funcname], scopes[:1], "return")
 				return
 		if funcname.isupper():
-			Ctx.want_imports.add(funcname)
+			Ctx.want_imports[funcname] = funcname
 
 @element
 def ReturnStatement(el, scopes, sc):
@@ -245,7 +245,7 @@ def VariableDeclaration(el, scopes, sc):
 				if decl.id.type != "ObjectPattern": continue # Or maybe not destructuring. Whatever, you do you.
 				for prop in decl.id.properties:
 					if prop.value.type == "Identifier" and prop.value.name.isupper():
-						Ctx.got_imports.append(prop.value.name)
+						Ctx.got_imports[prop.value.name] = prop.key.name
 				Ctx.import_source = decl.init.name
 				continue
 			# Descend into it, looking for functions; also save it in case it's used later.
@@ -318,11 +318,11 @@ def process(fn, *, fix=False, extcall=()):
 	for func in extcall or ():
 		if func in scope: descend(scope[func], (scope,), "return")
 	descend(exporteds, (scope,), "return");
-	Ctx.got_imports.sort()
+	have = sorted(Ctx.got_imports)
 	want = sorted(Ctx.want_imports)
 	if want != Ctx.got_imports:
 		print(fn)
-		lose = [x for x in Ctx.got_imports if x not in want]
+		lose = [x for x in have if x not in Ctx.want_imports]
 		gain = [x for x in want if x not in Ctx.got_imports]
 		if lose: print("LOSE:", lose)
 		if gain: print("GAIN:", gain)

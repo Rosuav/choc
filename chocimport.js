@@ -47,7 +47,7 @@ const Ctx = {
 	reset(fn="-") {
 		Ctx.autoimport_line = -1; //If we find "//autoimport" at the end of a line, any declaration surrounding that will be edited.
 		Ctx.autoimport_range = null;
-		Ctx.got_imports = [];
+		Ctx.got_imports = { };
 		Ctx.want_imports = { };
 		Ctx.import_source = "choc" //Will be set to "lindt" if the file uses lindt/replace_content
 		Ctx.fn = fn;
@@ -184,7 +184,7 @@ const elements = {
 				scopes.pop();
 			}
 			if (funcname === funcname.toUpperCase())
-				Ctx.want_imports[funcname] = 1;
+				Ctx.want_imports[funcname] = funcname;
 		}
 	},
 
@@ -247,7 +247,7 @@ const elements = {
 				if (decl.id.type !== "ObjectPattern") continue; //Or maybe not destructuring. Whatever, you do you.
 				for (let prop of decl.id.properties) {
 					if (prop.value.type === "Identifier" && prop.value.name === prop.value.name.toUpperCase())
-						Ctx.got_imports.push(prop.value.name);
+						Ctx.got_imports[prop.value.name] = prop.key.name;
 				}
 				Ctx.import_source = decl.init.name;
 				continue;
@@ -365,12 +365,12 @@ function process(fn, fix=false, extcall=[]) {
 	for (let func of extcall)
 		if (scope[func]) descend(scope[func], [scope], "return")
 	descend(exporteds, [scope], "return");
-	Ctx.got_imports.sort()
+	const have = Object.keys(Ctx.got_imports).sort();
 	const want = Object.keys(Ctx.want_imports).sort();
-	if (want.join(",") !== Ctx.got_imports.join(",")) {
+	if (want.join(",") !== have.join(",")) {
 		console.log(fn);
-		const lose = Ctx.got_imports.filter(fn => !want.includes(fn));
-		const gain = want.filter(fn => !Ctx.got_imports.includes(fn));
+		const lose = have.filter(fn => !Ctx.want_imports[fn]);
+		const gain = want.filter(fn => !Ctx.got_imports[fn]);
 		if (lose.length) console.log("LOSE: " + lose.join(", "));
 		if (gain.length) console.log("GAIN: " + gain.join(", "));
 		console.log("WANT: " + want.join(", "));
