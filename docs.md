@@ -219,4 +219,16 @@ are made available on the window object as pseudo-globals, for the convenience
 of non-module code (where an `import` statement is not available). These may
 therefore also be used from the browser console.
 
+### Special cases
+
+Though Chocolate Factory tries its best to be generic and handle everything the
+same way, there are occasionally quirks that are best handled in their own way.
+
+1. Normally an element is constructed, then given its attributes, then given its
+   children. (This parallels the order of parameters.) However, constructing a
+   SELECT element with a `value` attribute will reapply the value after adding
+   the children, since valid values for a drop-down list are defined by its
+   children.
+2. TODO: Look for any others that need to be documented. There aren't many.
+
 ----
