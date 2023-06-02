@@ -245,7 +245,10 @@ def VariableDeclaration(el, scopes, sc):
 				if decl.id.type != "ObjectPattern": continue # Or maybe not destructuring. Whatever, you do you.
 				for prop in decl.id.properties:
 					if prop.value.type == "Identifier" and prop.value.name.isupper():
-						Ctx.got_imports[prop.value.name] = prop.key.name
+						if prop.key.type == "Identifier": source = prop.key.name
+						elif prop.key.type == "Literal": source = prop.key.raw
+						else: print("Unrecognized import destructuring type " + prop.key.type)
+						Ctx.got_imports[prop.value.name] = source
 				Ctx.import_source = decl.init.name
 				continue
 			# Descend into it, looking for functions; also save it in case it's used later.

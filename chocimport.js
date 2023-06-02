@@ -246,8 +246,15 @@ const elements = {
 				//It's the import destructuring line.
 				if (decl.id.type !== "ObjectPattern") continue; //Or maybe not destructuring. Whatever, you do you.
 				for (let prop of decl.id.properties) {
-					if (prop.value.type === "Identifier" && prop.value.name === prop.value.name.toUpperCase())
-						Ctx.got_imports[prop.value.name] = prop.key.name;
+					if (prop.value.type === "Identifier" && prop.value.name === prop.value.name.toUpperCase()) {
+						let source;
+						switch (prop.key.type) {
+							case "Identifier": source = prop.key.name; break;
+							case "Literal": source = prop.key.raw; break;
+							default: console.warn("Unrecognized import destructuring type " + prop.key.type);
+						}
+						Ctx.got_imports[prop.value.name] = source;
+					}
 				}
 				Ctx.import_source = decl.init.name;
 				continue;
