@@ -1,5 +1,12 @@
 ## Chocolate Factory version history
 
+### v1.7.1
+
+* No changes to the Chocolate Factory itself, only the importers
+* chocimport now recognizes XML namespaces correctly and will retain them
+* An SVG() constructor will, by default, use the "svg:svg" namespace.
+* Lexically-nested calls will replicate the namespace used.
+
 ### v1.7.0
 
 * Implement rudimentary support for XML namespaces such as inline SVG elements.
