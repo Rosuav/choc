@@ -159,6 +159,7 @@ const elements = {
 					if (xmlns) {
 						const fn = NAMESPACE_XFRM[xmlns];
 						Ctx.want_imports[funcname] = '"' + xmlns + ':' + (fn ? fn(funcname) : funcname) + '"';
+						Ctx.import_namespaces[funcname] = Ctx.import_namespaces[funcname] || xmlns;
 					}
 					else Ctx.want_imports[funcname] = funcname;
 				}

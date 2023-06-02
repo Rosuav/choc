@@ -161,6 +161,7 @@ def Call(el, *, scopes, sc, **kw):
 				if xmlns:
 					fn = NAMESPACE_XFRM.get(xmlns)
 					Ctx.want_imports[funcname] = '"' + xmlns + ':' + (fn(funcname) if fn else funcname) + '"';
+					if funcname not in Ctx.import_namespaces: Ctx.import_namespaces[funcname] = xmlns
 				else: Ctx.want_imports[funcname] = funcname
 		return
 	descend(el.arguments, scopes=scopes, sc=sc, **kw) # Assume a function's arguments can be incorporated into its return value
