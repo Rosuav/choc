@@ -183,8 +183,11 @@ const elements = {
 				}
 				scopes.pop();
 			}
-			if (funcname === funcname.toUpperCase())
-				Ctx.want_imports[funcname] = funcname;
+			if (funcname === funcname.toUpperCase()) {
+				//SVG elements are special.
+				if (funcname === "SVG") Ctx.want_imports[funcname] = '"svg:svg"';
+				else Ctx.want_imports[funcname] = funcname;
+			}
 		}
 	},
 

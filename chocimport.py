@@ -181,7 +181,9 @@ def Call(el, scopes, sc):
 				descend(scope[funcname], scopes[:1], "return")
 				return
 		if funcname.isupper():
-			Ctx.want_imports[funcname] = funcname
+			# SVG elements are special.
+			if funcname == "SVG": Ctx.want_imports[funcname] = '"svg:svg"'
+			else: Ctx.want_imports[funcname] = funcname
 
 @element
 def ReturnStatement(el, scopes, sc):
