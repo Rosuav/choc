@@ -33,13 +33,15 @@ import sys
 import esprima # ImportError? pip install -r requirements.txt
 
 DOM_ADDITION_METHODS = ("appendChild", "before", "after", "append", "insertBefore", "replaceWith")
+DEFAULT_NAMESPACES = {"SVG": "svg"}
+NAMESPACE_XFRM = {"svg": lambda fn: fn.lower()}
 
 class Ctx:
 	@classmethod
 	def reset(cls, fn="-"):
 		Ctx.autoimport_line = -1 # If we find "//autoimport" at the end of a line, any declaration surrounding that will be edited.
 		Ctx.autoimport_range = None
-		Ctx.got_imports, Ctx.want_imports = { }, { }
+		Ctx.got_imports, Ctx.want_imports, Ctx.import_namespaces = { }, { }, { }
 		Ctx.import_source = "choc" # Will be set to "lindt" if the file uses lindt/replace_content
 		Ctx.fn = fn
 		Ctx.source_lines = []
@@ -132,9 +134,11 @@ def Identifier(el, *, scopes, sc, **kw):
 @element
 def Call(el, *, scopes, sc, **kw):
 	"""CallExpression NewExpression"""
-	descend(el.arguments, scopes=scopes, sc=sc, **kw) # Assume a function's arguments can be incorporated into its return value
 	if el.callee.type == "Identifier":
 		funcname = el.callee.name
+		prev = kw.get("xmlns", "(none)")
+		xmlns = Ctx.import_namespaces.get(funcname, DEFAULT_NAMESPACES.get(funcname, kw.pop("xmlns", ""))) # Be sure that xmlns is always popped out
+		descend(el.arguments, scopes=scopes, sc=sc, xmlns=xmlns, **kw)
 		if funcname in ("set_content", "replace_content"):
 			# Alright! We're setting content. First arg is the target, second is the content.
 			# Note that we don't validate mismatches of choc/replace_content or lindt/set_content.
@@ -154,10 +158,13 @@ def Call(el, *, scopes, sc, **kw):
 					descend(scope[funcname], scopes=scopes[:1], sc="return", **kw)
 					return
 			if funcname.isupper():
-				# SVG elements are special.
-				if funcname == "SVG": Ctx.want_imports[funcname] = '"svg:svg"'
+				if xmlns:
+					fn = NAMESPACE_XFRM.get(xmlns)
+					Ctx.want_imports[funcname] = '"' + xmlns + ':' + (fn(funcname) if fn else funcname) + '"';
 				else: Ctx.want_imports[funcname] = funcname
-	elif el.callee.type == "MemberExpression":
+		return
+	descend(el.arguments, scopes=scopes, sc=sc, **kw) # Assume a function's arguments can be incorporated into its return value
+	if el.callee.type == "MemberExpression":
 		c = el.callee
 		descend(c.object, scopes=scopes, sc="return" if sc == "set_content" else sc, **kw) # "foo(...).spam()" starts out by calling "foo(...)"
 		if c.computed: descend(c.property, scopes=scopes, sc=sc, **kw) # "foo[x]()" starts out by evaluating x

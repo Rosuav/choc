@@ -42,6 +42,8 @@ import * as espree from "espree";
 import fs from "node:fs";
 
 const DOM_ADDITION_METHODS = {appendChild:1, before:1, after:1, append:1, insertBefore:1, replaceWith:1}
+const DEFAULT_NAMESPACES = {SVG: "svg"};
+const NAMESPACE_XFRM = {svg: fn => fn.toLowerCase()};
 
 const Ctx = {
 	reset(fn="-") {
@@ -49,6 +51,7 @@ const Ctx = {
 		Ctx.autoimport_range = null;
 		Ctx.got_imports = { };
 		Ctx.want_imports = { };
+		Ctx.import_namespaces = { };
 		Ctx.import_source = "choc" //Will be set to "lindt" if the file uses lindt/replace_content
 		Ctx.fn = fn;
 		Ctx.source_lines = [];
@@ -121,9 +124,10 @@ const elements = {
 	},
 
 	["CallExpression NewExpression"]: (el, {scopes, sc, ...state}) => {
-		descend(el.arguments, {scopes, sc, ...state}); //Assume a function's arguments can be incorporated into its return value
 		if (el.callee.type === "Identifier") {
 			const funcname = el.callee.name;
+			const xmlns = Ctx.import_namespaces[funcname] || DEFAULT_NAMESPACES[funcname] || state.xmlns;
+			descend(el.arguments, {scopes, sc, ...state, xmlns});
 			if (funcname === "set_content" || funcname === "replace_content") {
 				//Alright! We're setting content. First arg is the target, second is the content.
 				//Note that we don't validate mismatches of choc/replace_content or lindt/set_content.
@@ -152,13 +156,17 @@ const elements = {
 					scopes.pop();
 				}
 				if (funcname === funcname.toUpperCase()) {
-					//SVG elements are special.
-					if (funcname === "SVG") Ctx.want_imports[funcname] = '"svg:svg"';
+					if (xmlns) {
+						const fn = NAMESPACE_XFRM[xmlns];
+						Ctx.want_imports[funcname] = '"' + xmlns + ':' + (fn ? fn(funcname) : funcname) + '"';
+					}
 					else Ctx.want_imports[funcname] = funcname;
 				}
 			}
+			return;
 		}
-		else if (el.callee.type === "MemberExpression") {
+		descend(el.arguments, {scopes, sc, ...state}); //Assume a function's arguments can be incorporated into its return value
+		if (el.callee.type === "MemberExpression") {
 			const c = el.callee;
 			descend(c.object, {scopes, sc: sc === "set_content" ? "return" : sc, ...state}); //"foo(...).spam()" starts out by calling "foo(...)"
 			if (c.computed) descend(c.property, {scopes, sc, ...state}); //"foo[x]()" starts out by evaluating x
@@ -252,7 +260,12 @@ const elements = {
 						let source;
 						switch (prop.key.type) {
 							case "Identifier": source = prop.key.name; break;
-							case "Literal": source = prop.key.raw; break;
+							case "Literal": {
+								source = prop.key.raw;
+								const parts = prop.key.value.split(":"); parts.pop(); //All but the last
+								Ctx.import_namespaces[prop.value.name] = parts.join(":");
+								break;
+							}
 							default: console.warn("Unrecognized import destructuring type " + prop.key.type);
 						}
 						Ctx.got_imports[prop.value.name] = source;
