@@ -62,57 +62,57 @@ function setdefault(obj, key, val) {
 }
 
 const elements = {
-	FunctionExpression(el, scopes, sc) {
+	FunctionExpression(el, {scopes, sc, ...state}) {
 		if (sc !== "return") sc = ""; //If we're not *calling* the function, then just probe it, don't process its return value
-		descend(el.body, [...scopes, { }], sc);
+		descend(el.body, {scopes: [...scopes, { }], sc, ...state});
 	},
 
-	ArrowFunctionExpression(el, scopes, sc) {
+	ArrowFunctionExpression(el, {scopes, sc, ...state}) {
 		if (sc === "return" && el.expression) //Braceless arrow functions implicitly return
-			descend(el.body, [...scopes, { }], "set_content");
-		else elements.FunctionExpression(el, scopes, sc);
+			descend(el.body, {scopes: [...scopes, { }], sc: "set_content", ...state});
+		else elements.FunctionExpression(el, {scopes, sc, ...state});
 	},
 
-	FunctionDeclaration(el, scopes, sc) {
+	FunctionDeclaration(el, {scopes, sc, ...state}) {
 		if (sc !== "return" && el.id)
 			setdefault(scopes[scopes.length - 1], el.id.name, []).push(el);
-		elements.FunctionExpression(el, scopes, sc);
+		elements.FunctionExpression(el, {scopes, sc, ...state});
 	},
 
 	["BlockStatement LabeledStatement WhileStatement DoWhileStatement " +
-	"CatchClause ForStatement ForInStatement ForOfStatement"]: (el, scopes, sc) => {
-		descend(el.body, scopes, sc);
+	"CatchClause ForStatement ForInStatement ForOfStatement"]: (el, state) => {
+		descend(el.body, state);
 	},
 
 	["Literal RegExpLiteral Directive EmptyStatement DebuggerStatement ThrowStatement UpdateExpression " +
 	"ImportExpression TemplateLiteral ContinueStatement BreakStatement ThisExpression ObjectPattern ArrayPattern"]:
-		(el, scopes, sc) => { },
+		(el, state) => { },
 
-	MemberExpression(el, scopes, sc) {
-		descend(el.object, scopes, sc);
+	MemberExpression(el, state) {
+		descend(el.object, state);
 	},
 
-	["ExportNamedDeclaration ExportDefaultDeclaration"]: (el, scopes, sc) => {
-		descend(el.declaration, scopes, sc);
+	["ExportNamedDeclaration ExportDefaultDeclaration"]: (el, state) => {
+		descend(el.declaration, state);
 	},
 
-	ImportDeclaration(el, scopes, sc) {
+	ImportDeclaration(el, state) {
 		//Optionally check that Choc Factory has indeed been imported, and skip the file if not?
-		descend(el.specifiers, scopes, sc);
+		descend(el.specifiers, state);
 	},
 
-	["ImportSpecifier ImportDefaultSpecifier"]: (el, scopes, sc) => {
+	["ImportSpecifier ImportDefaultSpecifier"]: (el, {scopes}) => {
 		//Mark that it's a known variable but don't attach any code to it
 		setdefault(scopes[scopes.length - 1], el.local.name, []);
 	},
 
-	Identifier(el, scopes, sc) {
+	Identifier(el, {scopes, sc, ...state}) {
 		if (sc !== "set_content" && sc !== "return") return;
 		scopes = [...scopes]; //We're gonna be mutating.
 		while (scopes.length) {
 			const f = scopes[scopes.length - 1][el.name];
 			if (f) {
-				descend(f, scopes, sc);
+				descend(f, {scopes, sc, ...state});
 				break;
 			}
 			//Not in that scope? Move up a scope and keep looking.
@@ -120,19 +120,19 @@ const elements = {
 		}
 	},
 
-	["CallExpression NewExpression"]: (el, scopes, sc) => {
-		descend(el.arguments, scopes, sc); //Assume a function's arguments can be incorporated into its return value
+	["CallExpression NewExpression"]: (el, {scopes, sc, ...state}) => {
+		descend(el.arguments, {scopes, sc, ...state}); //Assume a function's arguments can be incorporated into its return value
 		let funcname = null;
 		if (el.callee.type === "Identifier") funcname = el.callee.name;
 		else if (el.callee.type === "MemberExpression") {
 			const c = el.callee;
-			descend(c.object, scopes, sc === "set_content" ? "return" : sc); //"foo(...).spam()" starts out by calling "foo(...)"
-			if (c.computed) descend(c.property, scopes, sc); //"foo[x]()" starts out by evaluating x
+			descend(c.object, {scopes, sc: sc === "set_content" ? "return" : sc, ...state}); //"foo(...).spam()" starts out by calling "foo(...)"
+			if (c.computed) descend(c.property, {scopes, sc, ...state}); //"foo[x]()" starts out by evaluating x
 			else if (DOM_ADDITION_METHODS[c.property.name])
 				descend(el.arguments, scopes, "set_content");
 			else if (c.property.name === "map")
 				//stuff.map(e => ...) is effectively a call to that function.
-				descend(el.arguments[0], scopes, sc === "set_content" ? "return" : sc);
+				descend(el.arguments[0], {scopes, sc: sc === "set_content" ? "return" : sc, ...state});
 			else if (c.property.name === "push" || c.property.name === "unshift") {
 				//Adding to an array is adding code to the definition of the array.
 				//For static analysis, we consider both of these to have multiple code
@@ -152,7 +152,7 @@ const elements = {
 		}
 		else if (el.callee.type === "ArrowFunctionExpression" || el.callee.type === "FunctionExpression") {
 			//Function expression, immediately called. Might also be being named.
-			descend(el.callee, scopes, sc === "set_content" ? "return" : sc);
+			descend(el.callee, {scopes, sc: sc === "set_content" ? "return" : sc, ...state});
 			return;
 		}
 		else return //For now, I'm ignoring any unrecognized x.y() or x()() or anything
@@ -160,7 +160,7 @@ const elements = {
 			//Alright! We're setting content. First arg is the target, second is the content.
 			//Note that we don't validate mismatches of choc/replace_content or lindt/set_content.
 			if (el.arguments.length < 2) return; //Huh. Need two args. Whatever.
-			descend(el.arguments[1], scopes, "set_content");
+			descend(el.arguments[1], {scopes, sc: "set_content", ...state});
 			if (el.arguments.length > 2) {
 				console.warn(`${Ctx.fn}:${el.loc.start.line}: Extra arguments to set_content - did you intend to pass an array?`);
 				console.warn(Ctx.source_lines[el.loc.start.line - 1]);
@@ -178,7 +178,7 @@ const elements = {
 					//NOTE: The Python script had scopes[:1] here rather than "all scopes
 					//up to and including the one containing this function". I'm not sure
 					//what would be correct here, nor how to write a test to probe it.
-					descend(f, scopes, "return");
+					descend(f, {scopes, sc: "return", ...state});
 					return;
 				}
 				scopes.pop();
@@ -191,57 +191,57 @@ const elements = {
 		}
 	},
 
-	ReturnStatement(el, scopes, sc) {
+	ReturnStatement(el, {sc, ...state}) {
 		if (sc === "return") sc = "set_content";
-		descend(el.argument, scopes, sc);
+		descend(el.argument, {sc, ...state});
 	},
 
-	["ExpressionStatement ChainExpression"]: (el, scopes, sc) => {
-		descend(el.expression, scopes, sc);
+	["ExpressionStatement ChainExpression"]: (el, state) => {
+		descend(el.expression, state);
 	},
 
-	["IfStatement ConditionalExpression"]: (el, scopes, sc) => {
-		descend(el.consequent, scopes, sc);
-		descend(el.alternate, scopes, sc);
+	["IfStatement ConditionalExpression"]: (el, state) => {
+		descend(el.consequent, state);
+		descend(el.alternate, state);
 	},
 
-	SwitchStatement(el, scopes, sc) {
-		descend(el.cases, scopes, sc);
+	SwitchStatement(el, state) {
+		descend(el.cases, state);
 	},
 
-	SwitchCase(el, scopes, sc) {
-		descend(el.consequent, scopes, sc);
+	SwitchCase(el, state) {
+		descend(el.consequent, state);
 	},
 
-	TryStatement(el, scopes, sc) {
-		descend(el.block, scopes, sc);
-		descend(el.handler, scopes, sc);
-		descend(el.finalizer, scopes, sc);
+	TryStatement(el, state) {
+		descend(el.block, state);
+		descend(el.handler, state);
+		descend(el.finalizer, state);
 	},
 
-	ArrayExpression(el, scopes, sc) {
-		descend(el.elements, scopes, sc);
+	ArrayExpression(el, state) {
+		descend(el.elements, state);
 	},
 
-	ObjectExpression(el, scopes, sc) {
-		descend(el.properties, scopes, sc);
+	ObjectExpression(el, state) {
+		descend(el.properties, state);
 	},
 
-	Property(el, scopes, sc) {
-		descend(el.key, scopes, sc);
-		descend(el.value, scopes, sc);
+	Property(el, state) {
+		descend(el.key, state);
+		descend(el.value, state);
 	},
 
-	["UnaryExpression AwaitExpression SpreadElement YieldExpression"]: (el, scopes, sc) => {
-		descend(el.argument, scopes, sc);
+	["UnaryExpression AwaitExpression SpreadElement YieldExpression"]: (el, state) => {
+		descend(el.argument, state);
 	},
 
-	["BinaryExpression LogicalExpression"]: (el, scopes, sc) => {
-		descend(el.left, scopes, sc);
-		descend(el.right, scopes, sc);
+	["BinaryExpression LogicalExpression"]: (el, state) => {
+		descend(el.left, state);
+		descend(el.right, state);
 	},
 
-	VariableDeclaration(el, scopes, sc) {
+	VariableDeclaration(el, {scopes, ...state}) {
 		if (el.loc && el.loc.start.line <= Ctx.autoimport_line && el.loc.end.line >= Ctx.autoimport_line)
 			Ctx.autoimport_range = el.range;
 		for (let decl of el.declarations) if (decl.init) {
@@ -263,14 +263,14 @@ const elements = {
 				continue;
 			}
 			//Descend into it, looking for functions; also save it in case it's used later.
-			descend(decl.init, scopes, sc);
+			descend(decl.init, {scopes, ...state});
 			setdefault(scopes[scopes.length - 1], decl.id.name, []).push(decl.init);
 		}
 	},
 
-	AssignmentExpression(el, scopes, sc) {
-		descend(el.left, scopes, sc);
-		descend(el.right, scopes, sc);
+	AssignmentExpression(el, {scopes, sc, ...state}) {
+		descend(el.left, {scopes, sc, ...state});
+		descend(el.right, {scopes, sc, ...state});
 		if (el.left.type !== "Identifier" || sc === "set_content") return;
 		/* Assigning to a simple name stashes the expression in the appropriate scope.
 		NOTE: In some situations, an assignment "further down" than the corresponding set_content
@@ -299,20 +299,20 @@ Object.entries(elements).forEach(([k, f]) => {
 	k.split(" ").forEach(type => elements[type] = f);
 });
 
-function descend(el, scopes, sc) {
+function descend(el, state) {
 	if (!el) return;
 	if (Array.isArray(el)) {
-		el.forEach(el => descend(el, scopes, sc));
+		el.forEach(el => descend(el, state));
 		return;
 	}
 	//Any given element need only be visited once in any particular context
 	//Note that a list might have had more appended to it since it was last
 	//visited, so this check applies to the elements, not the whole list.
-	if (el["choc_visited_" + sc]) return;
-	el["choc_visited_" + sc] = true;
+	if (el["choc_visited_" + state.sc]) return;
+	el["choc_visited_" + state.sc] = true;
 
 	const f = elements[el.type]
-	if (f) f(el, scopes, sc)
+	if (f) f(el, state)
 	else {
 		console.warn(`${Ctx.fn}:${el.loc.start.line}: Unknown type: ${el.type}`);
 		elements[el.type] = () => 0; //Warn once per type
@@ -369,12 +369,12 @@ function process(fn, fix=false, extcall=[]) {
 		}
 	}
 	//Second pass: Recursively look for all set_content calls.
-	descend(module.body, [scope], "");
+	descend(module.body, {scopes: [scope], sc: ""});
 	//Some exported functions can return DOM elements. It's possible that they've
 	//already been scanned, but that's okay, we'll deduplicate in descend().
 	for (let func of extcall)
-		if (scope[func]) descend(scope[func], [scope], "return")
-	descend(exporteds, [scope], "return");
+		if (scope[func]) descend(scope[func], {scopes: [scope], sc: "return"})
+	descend(exporteds, {scopes: [scope], sc: "return"});
 	const have = Object.keys(Ctx.got_imports).sort();
 	const want = Object.keys(Ctx.want_imports).sort();
 	if (want.join(",") !== have.join(",")) {

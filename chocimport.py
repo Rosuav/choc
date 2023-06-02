@@ -52,10 +52,10 @@ def element(f):
 		elements[f.__name__] = f
 	return f
 
-def descend(el, scopes, sc):
+def descend(el, *, sc, **kw):
 	if not el: return
 	if isinstance(el, list):
-		for el in el: descend(el, scopes, sc)
+		for el in el: descend(el, sc=sc, **kw)
 		return
 	# Any given element need only be visited once in any particular context
 	# Note that a list might have had more appended to it since it was last
@@ -64,86 +64,86 @@ def descend(el, scopes, sc):
 	setattr(el, "choc_visited_" + sc, True)
 
 	f = elements.get(el.type)
-	if f: f(el, scopes, sc)
+	if f: f(el, sc=sc, **kw)
 	else:
 		print("%s:%d: Unknown type: %s" % (Ctx.fn, el.loc.start.line, el.type))
-		elements[el.type] = lambda el, scopes, sc: None
+		elements[el.type] = lambda el, **kw: None
 
 # Recursive AST descent handlers
 # Each one receives the current element and a tuple of current scopes
 
 # On finding any sort of function, descend into it to probe.
 @element
-def FunctionExpression(el, scopes, sc):
+def FunctionExpression(el, *, scopes, sc, **kw):
 	if sc != "return": sc = "" # If we're not *calling* the function, then just probe it, don't process its return value
-	descend(el.body, scopes + ({ },), sc)
+	descend(el.body, scopes=scopes + ({ },), sc=sc, **kw)
 
 @element
-def ArrowFunctionExpression(el, scopes, sc):
+def ArrowFunctionExpression(el, *, scopes, sc, **kw):
 	if sc == "return" and el.expression: # Braceless arrow functions implicitly return
-		descend(el.body, scopes + ({ },), "set_content")
-	else: FunctionExpression(el, scopes, sc)
+		descend(el.body, scopes=scopes + ({ },), sc="set_content", **kw)
+	else: FunctionExpression(el, scopes=scopes, sc=sc, **kw)
 
 @element
-def FunctionDeclaration(el, scopes, sc):
+def FunctionDeclaration(el, *, scopes, sc, **kw):
 	if sc != "return" and el.id: scopes[-1].setdefault(el.id.name, []).append(el)
-	FunctionExpression(el, scopes, sc)
+	FunctionExpression(el, scopes=scopes, sc=sc, **kw)
 
 @element
-def BodyDescender(el, scopes, sc):
+def BodyDescender(el, **kw):
 	"""BlockStatement LabeledStatement WhileStatement DoWhileStatement CatchClause
 	ForStatement ForInStatement ForOfStatement"""
-	descend(el.body, scopes, sc)
+	descend(el.body, **kw)
 
 @element
-def Ignore(el, scopes, sc):
+def Ignore(el, **kw):
 	"""Literal RegExpLiteral Directive EmptyStatement DebuggerStatement ThrowStatement UpdateExpression
 	ImportExpression TemplateLiteral ContinueStatement BreakStatement ThisExpression ObjectPattern ArrayPattern"""
 	# I assume that template strings will be used only for strings, not for DOM elements.
 
 @element
-def MemberExpression(el, scopes, sc):
-	descend(el.object, scopes, sc)
+def MemberExpression(el, **kw):
+	descend(el.object, **kw)
 
 @element
-def Export(el, scopes, sc):
+def Export(el, **kw):
 	"""ExportNamedDeclaration ExportDefaultDeclaration"""
-	descend(el.declaration, scopes, sc)
+	descend(el.declaration, **kw)
 
 @element
-def ImportDeclaration(el, scopes, sc):
+def ImportDeclaration(el, **kw):
 	# Optionally check that Choc Factory has indeed been imported, and skip the file if not?
-	descend(el.specifiers, scopes, sc)
+	descend(el.specifiers, **kw)
 
 @element
-def ImportSpec(el, scopes, sc):
+def ImportSpec(el, *, scopes, **kw):
 	"""ImportSpecifier ImportDefaultSpecifier"""
 	scopes[-1].setdefault(el.local.name, []) # Mark that it's a known variable but don't attach any code to it
 
 @element
-def Identifier(el, scopes, sc):
+def Identifier(el, *, scopes, sc, **kw):
 	if sc in ("set_content", "return"):
 		while scopes:
 			*scopes, scope = scopes
 			if el.name in scope:
-				descend(scope[el.name], (*scopes, scope), sc)
+				descend(scope[el.name], scopes=(*scopes, scope), sc=sc, **kw)
 				break
 
 @element
-def Call(el, scopes, sc):
+def Call(el, *, scopes, sc, **kw):
 	"""CallExpression NewExpression"""
-	descend(el.arguments, scopes, sc) # Assume a function's arguments can be incorporated into its return value
+	descend(el.arguments, scopes=scopes, sc=sc, **kw) # Assume a function's arguments can be incorporated into its return value
 	if el.callee.type == "Identifier": funcname = el.callee.name
 	elif el.callee.type == "MemberExpression":
 		c = el.callee
-		descend(c.object, scopes, "return" if sc == "set_content" else sc) # "foo(...).spam()" starts out by calling "foo(...)"
-		if c.computed: descend(c.property, scopes, sc) # "foo[x]()" starts out by evaluating x
+		descend(c.object, scopes=scopes, sc="return" if sc == "set_content" else sc, **kw) # "foo(...).spam()" starts out by calling "foo(...)"
+		if c.computed: descend(c.property, scopes=scopes, sc=sc, **kw) # "foo[x]()" starts out by evaluating x
 		elif c.property.name in DOM_ADDITION_METHODS:
-			descend(el.arguments, scopes, "set_content")
+			descend(el.arguments, scopes=scopes, sc="set_content", **kw)
 		elif c.property.name == "map":
 			# stuff.map(e => ...) is effectively a call to that function.
 			if sc == "set_content": sc = "return"
-			descend(el.arguments[0], scopes, sc)
+			descend(el.arguments[0], scopes=scopes, sc=sc, **kw)
 		elif c.property.name in ("push", "unshift"):
 			# Adding to an array is adding code to the definition of the array.
 			# For static analysis, we consider both of these to have multiple code
@@ -159,14 +159,14 @@ def Call(el, scopes, sc):
 		return
 	elif el.callee.type == "ArrowFunctionExpression" or el.callee.type == "FunctionExpression":
 		# Function expression, immediately called. Might also be being named.
-		descend(el.callee, scopes, "return" if sc == "set_content" else sc)
+		descend(el.callee, scopes=scopes, sc="return" if sc == "set_content" else sc, **kw)
 		return
 	else: return # For now, I'm ignoring any unrecognized x.y() or x()() or anything
 	if funcname in ("set_content", "replace_content"):
 		# Alright! We're setting content. First arg is the target, second is the content.
 		# Note that we don't validate mismatches of choc/replace_content or lindt/set_content.
 		if len(el.arguments) < 2: return # Huh. Need two args. Whatever.
-		descend(el.arguments[1], scopes, "set_content")
+		descend(el.arguments[1], scopes=scopes, sc="set_content", **kw)
 		if len(el.arguments) > 2:
 			print("%s:%d: Extra arguments to set_content - did you intend to pass an array?" %
 				(Ctx.fn, el.loc.start.line), file=sys.stderr)
@@ -178,7 +178,7 @@ def Call(el, scopes, sc):
 				# for actual set_content calls, but now we will scan it for return
 				# values as well. (If we've already scanned for return values, this
 				# will quickly return.)
-				descend(scope[funcname], scopes[:1], "return")
+				descend(scope[funcname], scopes=scopes[:1], sc="return", **kw)
 				return
 		if funcname.isupper():
 			# SVG elements are special.
@@ -186,58 +186,58 @@ def Call(el, scopes, sc):
 			else: Ctx.want_imports[funcname] = funcname
 
 @element
-def ReturnStatement(el, scopes, sc):
+def ReturnStatement(el, *, sc, **kw):
 	if sc == "return": sc = "set_content"
-	descend(el.argument, scopes, sc)
+	descend(el.argument, sc=sc, **kw)
 
 @element
-def ExpressionStatement(el, scopes, sc):
-	descend(el.expression, scopes, sc)
+def ExpressionStatement(el, **kw):
+	descend(el.expression, **kw)
 
 @element
-def If(el, scopes, sc):
+def If(el, **kw):
 	"""IfStatement ConditionalExpression"""
-	descend(el.consequent, scopes, sc)
-	descend(el.alternate, scopes, sc)
+	descend(el.consequent, **kw)
+	descend(el.alternate, **kw)
 
 @element
-def SwitchStatement(el, scopes, sc):
-	descend(el.cases, scopes, sc)
+def SwitchStatement(el, **kw):
+	descend(el.cases, **kw)
 @element
-def SwitchCase(el, scopes, sc):
-	descend(el.consequent, scopes, sc)
+def SwitchCase(el, **kw):
+	descend(el.consequent, **kw)
 
 @element
-def TryStatement(el, scopes, sc):
-	descend(el.block, scopes, sc)
-	descend(el.handler, scopes, sc)
-	descend(el.finalizer, scopes, sc)
+def TryStatement(el, **kw):
+	descend(el.block, **kw)
+	descend(el.handler, **kw)
+	descend(el.finalizer, **kw)
 
 @element
-def ArrayExpression(el, scopes, sc):
-	descend(el.elements, scopes, sc)
+def ArrayExpression(el, **kw):
+	descend(el.elements, **kw)
 
 @element
-def ObjectExpression(el, scopes, sc):
-	descend(el.properties, scopes, sc)
+def ObjectExpression(el, **kw):
+	descend(el.properties, **kw)
 @element
-def Property(el, scopes, sc):
-	descend(el.key, scopes, sc)
-	descend(el.value, scopes, sc)
+def Property(el, **kw):
+	descend(el.key, **kw)
+	descend(el.value, **kw)
 
 @element
-def Unary(el, scopes, sc):
+def Unary(el, **kw):
 	"""UnaryExpression AwaitExpression SpreadElement YieldExpression"""
-	descend(el.argument, scopes, sc)
+	descend(el.argument, **kw)
 
 @element
-def Binary(el, scopes, sc):
+def Binary(el, **kw):
 	"""BinaryExpression LogicalExpression"""
-	descend(el.left, scopes, sc)
-	descend(el.right, scopes, sc)
+	descend(el.left, **kw)
+	descend(el.right, **kw)
 
 @element
-def VariableDeclaration(el, scopes, sc):
+def VariableDeclaration(el, *, scopes, **kw):
 	if el.loc and el.loc.start.line <= Ctx.autoimport_line and el.loc.end.line >= Ctx.autoimport_line:
 		Ctx.autoimport_range = el.range
 	for decl in el.declarations:
@@ -254,13 +254,13 @@ def VariableDeclaration(el, scopes, sc):
 				Ctx.import_source = decl.init.name
 				continue
 			# Descend into it, looking for functions; also save it in case it's used later.
-			descend(decl.init, scopes, sc)
+			descend(decl.init, scopes=scopes, **kw)
 			scopes[-1].setdefault(decl.id.name, []).append(decl.init)
 
 @element
-def AssignmentExpression(el, scopes, sc):
-	descend(el.left, scopes, sc)
-	descend(el.right, scopes, sc)
+def AssignmentExpression(el, *, scopes, sc, **kw):
+	descend(el.left, scopes=scopes, sc=sc, **kw)
+	descend(el.right, scopes=scopes, sc=sc, **kw)
 	if el.left.type != "Identifier" or sc == "set_content": return
 	# Assigning to a simple name stashes the expression in the appropriate scope.
 	# NOTE: In some situations, an assignment "further down" than the corresponding set_content
@@ -317,12 +317,12 @@ def process(fn, *, fix=False, extcall=()):
 			# export function COMPONENT() { }
 			if exported and el.id.name.isupper(): exporteds.append(el)
 	# Second pass: Recursively look for all set_content calls.
-	descend(module.body, (scope,), "")
+	descend(module.body, scopes=(scope,), sc="")
 	# Some exported functions can return DOM elements. It's possible that they've
 	# already been scanned, but that's okay, we'll deduplicate in descend().
 	for func in extcall or ():
-		if func in scope: descend(scope[func], (scope,), "return")
-	descend(exporteds, (scope,), "return");
+		if func in scope: descend(scope[func], scopes=(scope,), sc="return")
+	descend(exporteds, scopes=(scope,), sc="return");
 	have = sorted(Ctx.got_imports)
 	want = sorted(Ctx.want_imports)
 	if want != Ctx.got_imports:
