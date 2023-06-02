@@ -133,7 +133,30 @@ def Identifier(el, *, scopes, sc, **kw):
 def Call(el, *, scopes, sc, **kw):
 	"""CallExpression NewExpression"""
 	descend(el.arguments, scopes=scopes, sc=sc, **kw) # Assume a function's arguments can be incorporated into its return value
-	if el.callee.type == "Identifier": funcname = el.callee.name
+	if el.callee.type == "Identifier":
+		funcname = el.callee.name
+		if funcname in ("set_content", "replace_content"):
+			# Alright! We're setting content. First arg is the target, second is the content.
+			# Note that we don't validate mismatches of choc/replace_content or lindt/set_content.
+			if len(el.arguments) < 2: return # Huh. Need two args. Whatever.
+			descend(el.arguments[1], scopes=scopes, sc="set_content", **kw)
+			if len(el.arguments) > 2:
+				print("%s:%d: Extra arguments to set_content - did you intend to pass an array?" %
+					(Ctx.fn, el.loc.start.line), file=sys.stderr)
+				print(Ctx.source_lines[el.loc.start.line - 1], file=sys.stderr)
+		if sc == "set_content":
+			for scope in reversed(scopes):
+				if funcname in scope:
+					# Descend into the function. It's possible we've already scanned it
+					# for actual set_content calls, but now we will scan it for return
+					# values as well. (If we've already scanned for return values, this
+					# will quickly return.)
+					descend(scope[funcname], scopes=scopes[:1], sc="return", **kw)
+					return
+			if funcname.isupper():
+				# SVG elements are special.
+				if funcname == "SVG": Ctx.want_imports[funcname] = '"svg:svg"'
+				else: Ctx.want_imports[funcname] = funcname
 	elif el.callee.type == "MemberExpression":
 		c = el.callee
 		descend(c.object, scopes=scopes, sc="return" if sc == "set_content" else sc, **kw) # "foo(...).spam()" starts out by calling "foo(...)"
@@ -156,34 +179,10 @@ def Call(el, *, scopes, sc, **kw):
 					if name in scope:
 						scope[name].append(el.arguments)
 						return
-		return
 	elif el.callee.type == "ArrowFunctionExpression" or el.callee.type == "FunctionExpression":
 		# Function expression, immediately called. Might also be being named.
 		descend(el.callee, scopes=scopes, sc="return" if sc == "set_content" else sc, **kw)
-		return
-	else: return # For now, I'm ignoring any unrecognized x.y() or x()() or anything
-	if funcname in ("set_content", "replace_content"):
-		# Alright! We're setting content. First arg is the target, second is the content.
-		# Note that we don't validate mismatches of choc/replace_content or lindt/set_content.
-		if len(el.arguments) < 2: return # Huh. Need two args. Whatever.
-		descend(el.arguments[1], scopes=scopes, sc="set_content", **kw)
-		if len(el.arguments) > 2:
-			print("%s:%d: Extra arguments to set_content - did you intend to pass an array?" %
-				(Ctx.fn, el.loc.start.line), file=sys.stderr)
-			print(Ctx.source_lines[el.loc.start.line - 1], file=sys.stderr)
-	if sc == "set_content":
-		for scope in reversed(scopes):
-			if funcname in scope:
-				# Descend into the function. It's possible we've already scanned it
-				# for actual set_content calls, but now we will scan it for return
-				# values as well. (If we've already scanned for return values, this
-				# will quickly return.)
-				descend(scope[funcname], scopes=scopes[:1], sc="return", **kw)
-				return
-		if funcname.isupper():
-			# SVG elements are special.
-			if funcname == "SVG": Ctx.want_imports[funcname] = '"svg:svg"'
-			else: Ctx.want_imports[funcname] = funcname
+	# else: pass # For now, I'm ignoring any unrecognized x.y() or x()() or anything
 
 @element
 def ReturnStatement(el, *, sc, **kw):

@@ -122,8 +122,42 @@ const elements = {
 
 	["CallExpression NewExpression"]: (el, {scopes, sc, ...state}) => {
 		descend(el.arguments, {scopes, sc, ...state}); //Assume a function's arguments can be incorporated into its return value
-		let funcname = null;
-		if (el.callee.type === "Identifier") funcname = el.callee.name;
+		if (el.callee.type === "Identifier") {
+			const funcname = el.callee.name;
+			if (funcname === "set_content" || funcname === "replace_content") {
+				//Alright! We're setting content. First arg is the target, second is the content.
+				//Note that we don't validate mismatches of choc/replace_content or lindt/set_content.
+				if (el.arguments.length < 2) return; //Huh. Need two args. Whatever.
+				descend(el.arguments[1], {scopes, sc: "set_content", ...state});
+				if (el.arguments.length > 2) {
+					console.warn(`${Ctx.fn}:${el.loc.start.line}: Extra arguments to set_content - did you intend to pass an array?`);
+					console.warn(Ctx.source_lines[el.loc.start.line - 1]);
+				}
+			}
+			if (sc === "set_content") {
+				scopes = [...scopes]; //We're gonna be mutating.
+				while (scopes.length) {
+					const f = scopes[scopes.length - 1][funcname];
+					if (f) {
+						//Descend into the function. It's possible we've already scanned it
+						//for actual set_content calls, but now we will scan it for return
+						//values as well. (If we've already scanned for return values, this
+						//will quickly return.)
+						//NOTE: The Python script had scopes[:1] here rather than "all scopes
+						//up to and including the one containing this function". I'm not sure
+						//what would be correct here, nor how to write a test to probe it.
+						descend(f, {scopes, sc: "return", ...state});
+						return;
+					}
+					scopes.pop();
+				}
+				if (funcname === funcname.toUpperCase()) {
+					//SVG elements are special.
+					if (funcname === "SVG") Ctx.want_imports[funcname] = '"svg:svg"';
+					else Ctx.want_imports[funcname] = funcname;
+				}
+			}
+		}
 		else if (el.callee.type === "MemberExpression") {
 			const c = el.callee;
 			descend(c.object, {scopes, sc: sc === "set_content" ? "return" : sc, ...state}); //"foo(...).spam()" starts out by calling "foo(...)"
@@ -148,47 +182,12 @@ const elements = {
 						}
 				}
 			}
-			return;
 		}
 		else if (el.callee.type === "ArrowFunctionExpression" || el.callee.type === "FunctionExpression") {
 			//Function expression, immediately called. Might also be being named.
 			descend(el.callee, {scopes, sc: sc === "set_content" ? "return" : sc, ...state});
-			return;
 		}
-		else return //For now, I'm ignoring any unrecognized x.y() or x()() or anything
-		if (funcname === "set_content" || funcname === "replace_content") {
-			//Alright! We're setting content. First arg is the target, second is the content.
-			//Note that we don't validate mismatches of choc/replace_content or lindt/set_content.
-			if (el.arguments.length < 2) return; //Huh. Need two args. Whatever.
-			descend(el.arguments[1], {scopes, sc: "set_content", ...state});
-			if (el.arguments.length > 2) {
-				console.warn(`${Ctx.fn}:${el.loc.start.line}: Extra arguments to set_content - did you intend to pass an array?`);
-				console.warn(Ctx.source_lines[el.loc.start.line - 1]);
-			}
-		}
-		if (sc === "set_content") {
-			scopes = [...scopes]; //We're gonna be mutating.
-			while (scopes.length) {
-				const f = scopes[scopes.length - 1][funcname];
-				if (f) {
-					//Descend into the function. It's possible we've already scanned it
-					//for actual set_content calls, but now we will scan it for return
-					//values as well. (If we've already scanned for return values, this
-					//will quickly return.)
-					//NOTE: The Python script had scopes[:1] here rather than "all scopes
-					//up to and including the one containing this function". I'm not sure
-					//what would be correct here, nor how to write a test to probe it.
-					descend(f, {scopes, sc: "return", ...state});
-					return;
-				}
-				scopes.pop();
-			}
-			if (funcname === funcname.toUpperCase()) {
-				//SVG elements are special.
-				if (funcname === "SVG") Ctx.want_imports[funcname] = '"svg:svg"';
-				else Ctx.want_imports[funcname] = funcname;
-			}
-		}
+		//else ; //For now, I'm ignoring any unrecognized x.y() or x()() or anything
 	},
 
 	ReturnStatement(el, {sc, ...state}) {
