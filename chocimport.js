@@ -126,7 +126,8 @@ const elements = {
 	["CallExpression NewExpression"]: (el, {scopes, sc, ...state}) => {
 		if (el.callee.type === "Identifier") {
 			const funcname = el.callee.name;
-			const xmlns = Ctx.import_namespaces[funcname] || DEFAULT_NAMESPACES[funcname] || state.xmlns;
+			let xmlns = Ctx.import_namespaces[funcname];
+			if (typeof xmlns === "undefined") xmlns = DEFAULT_NAMESPACES[funcname] || state.xmlns;
 			descend(el.arguments, {scopes, sc, ...state, xmlns});
 			if (funcname === "set_content" || funcname === "replace_content") {
 				//Alright! We're setting content. First arg is the target, second is the content.
@@ -260,7 +261,10 @@ const elements = {
 					if (prop.value.type === "Identifier" && prop.value.name === prop.value.name.toUpperCase()) {
 						let source;
 						switch (prop.key.type) {
-							case "Identifier": source = prop.key.name; break;
+							case "Identifier":
+								source = prop.key.name;
+								Ctx.import_namespaces[prop.value.name] = ""
+								break;
 							case "Literal": {
 								source = prop.key.raw;
 								const parts = prop.key.value.split(":"); parts.pop(); //All but the last
