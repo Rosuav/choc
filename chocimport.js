@@ -373,10 +373,17 @@ function process(fn, fix=false, extcall=[]) {
 		const gain = want.filter(fn => !Ctx.got_imports[fn]);
 		if (lose.length) console.log("LOSE: " + lose.join(", "));
 		if (gain.length) console.log("GAIN: " + gain.join(", "));
-		console.log("WANT: " + want.join(", "));
+		const wanted = want.map(fn => {
+			//If the import previously existed, keep it; otherwise, use what
+			//we expect to be wanted based on the function name and context.
+			const prev = Ctx.got_imports[fn] || Ctx.want_imports[fn];
+			if (prev === fn) return fn; //Common case: just the function name
+			return prev + ": " + fn;
+		}).join(", ");
+		console.log("WANT: " + wanted);
 		if (Ctx.autoimport_range) {
 			const [start, end] = Ctx.autoimport_range;
-			data = data.slice(0, start) + "const {" + want.join(", ") + "} = " + Ctx.import_source + ";" + data.slice(end);
+			data = data.slice(0, start) + "const {" + wanted + "} = " + Ctx.import_source + ";" + data.slice(end);
 			//Write-back if the user wants it
 			if (fn === "-") console.log(data);
 			if (fix) fs.writeFileSync(fn, data);

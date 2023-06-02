@@ -326,10 +326,16 @@ def process(fn, *, fix=False, extcall=()):
 		gain = [x for x in want if x not in Ctx.got_imports]
 		if lose: print("LOSE:", lose)
 		if gain: print("GAIN:", gain)
-		print("WANT:", want)
+		wanted = []
+		for fn in want:
+			prev = Ctx.got_imports.get(fn, Ctx.want_imports[fn]);
+			if prev == fn: wanted.append(fn)
+			else: wanted.append(prev + ": " + fn)
+		wanted = ", ".join(wanted)
+		print("WANT:", wanted)
 		if Ctx.autoimport_range:
 			start, end = Ctx.autoimport_range
-			data = data[:start] + "const {" + ", ".join(want) + "} = " + Ctx.import_source + ";" + data[end:]
+			data = data[:start] + "const {" + wanted + "} = " + Ctx.import_source + ";" + data[end:]
 			# Write-back if the user wants it
 			if fn == "-": print(data)
 			if fix:
