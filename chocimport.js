@@ -173,7 +173,7 @@ const elements = {
 			descend(c.object, {scopes, sc: sc === "set_content" ? "return" : sc, ...state}); //"foo(...).spam()" starts out by calling "foo(...)"
 			if (c.computed) descend(c.property, {scopes, sc, ...state}); //"foo[x]()" starts out by evaluating x
 			else if (DOM_ADDITION_METHODS[c.property.name])
-				descend(el.arguments, scopes, "set_content");
+				descend(el.arguments, {scopes, sc: "set_content", ...state});
 			else if (c.property.name === "map")
 				//stuff.map(e => ...) is effectively a call to that function.
 				descend(el.arguments[0], {scopes, sc: sc === "set_content" ? "return" : sc, ...state});
