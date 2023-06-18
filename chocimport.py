@@ -32,7 +32,7 @@ possible styles of usage, but the most common ones:
 import sys
 import esprima # ImportError? pip install -r requirements.txt
 
-DOM_ADDITION_METHODS = ("appendChild", "before", "after", "append", "insertBefore", "replaceWith")
+DOM_ADDITION_METHODS = ("appendChild", "before", "after", "append", "prepend", "insertBefore", "replaceWith")
 DEFAULT_NAMESPACES = {"SVG": "svg"}
 NAMESPACE_XFRM = {"svg": lambda fn: fn.lower()}
 

@@ -41,7 +41,7 @@ const {"svg:svg": SVG, FOO: BAR} = choc;
 import * as espree from "espree";
 import fs from "node:fs";
 
-const DOM_ADDITION_METHODS = {appendChild:1, before:1, after:1, append:1, insertBefore:1, replaceWith:1}
+const DOM_ADDITION_METHODS = {appendChild:1, before:1, after:1, append:1, prepend: 1, insertBefore:1, replaceWith:1};
 const DEFAULT_NAMESPACES = {SVG: "svg"};
 const NAMESPACE_XFRM = {svg: fn => fn.toLowerCase()};
 
