@@ -26,17 +26,9 @@ possible styles of usage, but the most common ones:
 5) const arr = []; arr.push(LI()); set_content(thing, arr)
 6) const arr = stuff.map(thing => LI(thing.name)); set_content(thing, arr)
 7) DOM("#foo").appendChild(LI())
-   - equivalently before(), after(), append(), insertBefore(), replaceWith()
+   - also related methods, see DOM_ADDITION_METHODS
 8) (x => ABBR(x.attr, x.text))(stuff)
 9) replace_content in any context where set_content is valid
-
-TODO: Support import aliases and SVG
-- Import aliases should be retained when given and not blown away
-- SVG() should trigger an import of "svg:svg": SVG
-- Anything inside SVG() should trigger an import that's been lowercased
-- If pure lowercasing isn't correct, leave it up to the programmer to fix;
-  an edited alias import should be supported (that's first prio).
-const {"svg:svg": SVG, FOO: BAR} = choc;
 */
 import * as espree from "espree";
 import fs from "node:fs";

@@ -1,5 +1,12 @@
 ## Chocolate Factory version history
 
+### v1.7.2
+
+* No changes to the Chocolate Factory itself, only the importers
+* Bugfix: DOM addition methods (appendChild, etc) had been broken by the importer
+  changes related to SVG handling (keyword args for state). Now unbroken.
+* Bugfix: element.prepend() was omitted from the DOM addition method list.
+
 ### v1.7.1
 
 * No changes to the Chocolate Factory itself, only the importers
