@@ -343,10 +343,10 @@ def process(fn, *, fix=False, extcall=()):
 		if lose: print("LOSE:", lose)
 		if gain: print("GAIN:", gain)
 		wanted = []
-		for fn in want:
-			prev = Ctx.got_imports.get(fn, Ctx.want_imports[fn]);
-			if prev == fn: wanted.append(fn)
-			else: wanted.append(prev + ": " + fn)
+		for func in want:
+			prev = Ctx.got_imports.get(func, Ctx.want_imports[func]);
+			if prev == func: wanted.append(func)
+			else: wanted.append(prev + ": " + func)
 		wanted = ", ".join(wanted)
 		print("WANT:", wanted)
 		if Ctx.autoimport_range:
