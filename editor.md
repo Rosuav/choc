@@ -40,8 +40,8 @@ can run the importer when you press (eg) Ctrl-1. Add the following to your
 Visual Studio Code
 ------------------
 
-Microsoft's VS Code, one of the world's most popular editors, can bind any key
-to run the importer. Create a task (Configure, Tasks, Create tasks.json from
+Microsoft's VS Code, one of the world's most popular editors, can [bind any key
+to run the importer](https://code.visualstudio.com/docs/editor/tasks#_binding-keyboard-shortcuts-to-tasks). Create a task (Configure, Tasks, Create tasks.json from
 template) and add this inside the `"tasks"` array:
 
     {
