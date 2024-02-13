@@ -47,7 +47,7 @@ template) and add this inside the `"tasks"` array:
     {
         "label": "Choc Autoimport",
         "type": "shell",
-        "command": "chocimport --fix ${file}"
+        "command": "chocimport --fix \"${file}\""
     }
 
 It is then available in the tasks menu, and can be assigned a keybinding, for
