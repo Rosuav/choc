@@ -83,3 +83,15 @@ would be a problem, consider this notation:
     ]
 
 If the element exists, it will be reused, otherwise it will be seamlessly recreated.
+
+
+### The SELECT element
+
+When a `<select>` element has a `value` attribute, if one of the `<option>`s matches that value, it 
+will display as selected. Due to browser quirks, this value must be set _after_ options
+have been added. Since `set_content` returns it's target element, the value can be set
+afterward by chaining:
+
+```
+set_content(DOM("#selectelem"), [OPTION(...), OPTION(...)]).value.some_val;
+```
