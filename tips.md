@@ -12,3 +12,11 @@ afterward by chaining:
 ```
 set_content(DOM("#selectelem"), [OPTION(...), OPTION(...)]).value = some_val;
 ```
+
+## Converting existing HTML and SVG
+
+Take advantage of a [quick conversion tool](convert.html) to do the bulk of the work. Some formatting
+may want to be adjusted, and the necessary imports will need to be added (eg using autoimport), but
+the majority of the translation should work correctly.
+
+Suitable for HTML snippets, SVG images, and probably most other XML documents.
