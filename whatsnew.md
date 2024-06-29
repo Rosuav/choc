@@ -1,5 +1,12 @@
 ## Chocolate Factory version history
 
+### vNext
+
+* Importer feature (JS only): Explicit calls to choc.X() or lindt.X() will mark
+  their arguments as Choc Factory context.
+* There is now also a transformation tool available at [convert.html](convert.html)
+  to aid in turning HTML into dynamically-generated DOM elements.
+
 ### v1.7.2
 
 * No changes to the Chocolate Factory itself, only the importers

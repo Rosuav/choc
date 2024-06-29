@@ -159,7 +159,11 @@ const elements = {
 			}
 			return;
 		}
-		descend(el.arguments, {scopes, sc, ...state}); //Assume a function's arguments can be incorporated into its return value
+		if (el.callee.type === "MemberExpression" && el.callee.object.type === "Identifier" &&
+				(el.callee.object.name === "choc" || el.callee.object.name === "lindt"))
+			//Inside an explicit call to choc.X(...) or lindt.X(...), it's Choc Factory context.
+			descend(el.arguments, {scopes, sc: "set_content", ...state});
+		else descend(el.arguments, {scopes, sc, ...state}); //Otherwise, assume a function's arguments can be incorporated into its return value.
 		if (el.callee.type === "MemberExpression") {
 			const c = el.callee;
 			descend(c.object, {scopes, sc: sc === "set_content" ? "return" : sc, ...state}); //"foo(...).spam()" starts out by calling "foo(...)"
