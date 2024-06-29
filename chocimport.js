@@ -59,6 +59,7 @@ function setdefault(obj, key, val) {
 const elements = {
 	FunctionExpression(el, {scopes, sc, ...state}) {
 		if (sc !== "return") sc = ""; //If we're not *calling* the function, then just probe it, don't process its return value
+		if (Ctx.source_lines[el.loc.start.line - 1].endsWith("//extcall")) sc = "return"; //But if we're calling it elsewhere, then do.
 		descend(el.body, {scopes: [...scopes, { }], sc, ...state});
 	},
 

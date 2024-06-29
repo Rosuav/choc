@@ -23,7 +23,9 @@ Factory elements, identify this to the importer thus:
 
     chocimport --fix --extcall=render_item --extcall=render_command /some/file.js
 
-Any number of extcall directives can be given.
+Any number of extcall directives can be given. You can also adorn individual
+function definitions with "//extcall" at the end of the line; this has the same
+effect, but can be used with any function, not just one at top level.
 
 SciTE
 -----

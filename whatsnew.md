@@ -4,6 +4,9 @@
 
 * Importer feature (JS only): Explicit calls to choc.X() or lindt.X() will mark
   their arguments as Choc Factory context.
+* Importer feature: A function definition can be marked with `//extcall`. This has
+  the same effect as giving its name in an `--extcall` parameter, but works for
+  functions that are defined somewhere other than global scope.
 * There is now also a transformation tool available at [convert.html](convert.html)
   to aid in turning HTML into dynamically-generated DOM elements.
 
