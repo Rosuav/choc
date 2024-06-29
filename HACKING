@@ -1,0 +1,13 @@
+Notes to self, more than anything else
+======================================
+
+Releases
+--------
+
+1. Bump the version number. Maj.min.rev but when only making changes to the
+   ancillary tools, rev is fine.
+2. Set the version number in factory.js (near the end)
+3. Set the version number in package.json
+4. Make sure whatsnew.md has the correct heading
+5. Commit. Tag the release "vX.Y.Z". Push the commit and the tag.
+6. npm publish
