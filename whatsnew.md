@@ -1,6 +1,6 @@
 ## Chocolate Factory version history
 
-### vNext
+### v1.7.3
 
 * Importer feature (JS only): Explicit calls to choc.X() or lindt.X() will mark
   their arguments as Choc Factory context.
