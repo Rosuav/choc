@@ -1,5 +1,10 @@
 ## Chocolate Factory version history
 
+### vNext
+
+* Bug fix: Calling replace_content with a non-matching selector will correctly
+  throw an error.
+
 ### v1.7.3
 
 * Importer feature (JS only): Explicit calls to choc.X() or lindt.X() will mark

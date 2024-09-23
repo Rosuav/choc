@@ -170,7 +170,10 @@ let choc = function(tag, attributes, children) {
 }
 
 export function replace_content(target, template) {
-	if (typeof target === "string") target = DOM(target);
+	if (typeof target === "string") {
+		target = DOM(target);
+		if (!target) throw new Error("No element found for replace_content");
+	}
 	let was = target ? target._CHOC_template : [];
 	if (!was) {
 		//The first time you use replace_template, it functions broadly like set_content.
