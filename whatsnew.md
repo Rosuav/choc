@@ -1,6 +1,6 @@
 ## Chocolate Factory version history
 
-### vNext
+### v1.8.0
 
 * fix_dialogs has been renamed to apply_fixes, with the old name retained for
   compatibility.
