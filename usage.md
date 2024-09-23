@@ -60,16 +60,16 @@ shorter. Way shorter.)
 
 ## Extra tricks
 
-If you use the `<dialog>` tag, consider `fix_dialogs()`. It adds basic support to
+If you use the `<dialog>` tag, consider `apply_fixes()`. It adds basic support to
 browsers which lack it, and can optionally provide automatic behaviour for
 close buttons and/or clicking outside the dialog to close it.
 
-    import choc, {set_content, on, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-    fix_dialogs({close_selector: "button.close,input[type=submit]"});
-    fix_dialogs({click_outside: true});
+    import {choc, set_content, on, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
+    apply_fixes({close_selector: "button.close,input[type=submit]"});
+    apply_fixes({click_outside: true});
     //Clicking outside dialogs closes them, but only if there is
     //no <form> inside the <dialog>. Guards against accidental closings.
-    fix_dialogs({click_outside: "formless"});
+    apply_fixes({click_outside: "formless"});
 
 ---
 

@@ -122,9 +122,9 @@ function. For example:
         }, 1000);
     });
 
-### `fix_dialogs` - Provide extra functionality and compatibility for dialogs
+### `apply_fixes` - Provide extra functionality and compatibility for dialogs
 
-    fix_dialogs({
+    apply_fixes({
         close_selector: selector,
         click_outside: false | true | "formless",
     });
@@ -142,6 +142,19 @@ of functionality. Additional features can be selected, all are optional:
   background where it's blocking access to the rest of the document) will close
   the dialog. If the string `"formless"`, this applies only when the dialog
   doesn't contain a `form` element.
+* `methods` - if true, will add methods to all DOM elements. Use value of 1,
+  as future expansion may give different meaning to higher numbers. See below
+  for methods added.
+
+Note that this function can be imported and called under the name `fix_dialogs`
+for compatibility with older versions of the Chocolate Factory.
+
+#### Additional DOM methods added
+
+`apply_fixes({methods: 1})` will add the following method to all DOM elements:
+
+* `elem.closest_data("foo")` is approximately equivalent to `elem.closest("[data-foo]").dataset.foo`
+  but will return `null` if no parent element has this data attribute.
 
 ### `lindt` - Construct an element template
 

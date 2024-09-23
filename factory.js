@@ -78,11 +78,11 @@ export function on(event, selector, handler, options) {
 }
 
 //Apply some patches to <dialog> tags to make them easier to use. Accepts keyword args in a config object:
-//	fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
+//	apply_fixes({close_selector: ".dialog_cancel,.dialog_close", click_outside: true});
 //For older browsers, this adds showModal() and close() methods
 //If cfg.close_selector, will hook events from all links/buttons matching it to close the dialog
 //If cfg.click_outside, any click outside a dialog will also close it. (May not work on older browsers.)
-export function fix_dialogs(cfg) {
+export function apply_fixes(cfg) {
 	if (!cfg) cfg = {};
 	//For browsers with only partial support for the <dialog> tag, add the barest minimum.
 	//On browsers with full support, there are many advantages to using dialog rather than
@@ -121,7 +121,22 @@ export function fix_dialogs(cfg) {
 		}
 	});
 	if (cfg.close_selector) on("click", cfg.close_selector, e => e.match.closest("dialog").close());
+	if (cfg.methods) {
+		//Future expansion: {methods: 1} may be different from {methods: 2}
+
+		//elem.closest_data("foo") <=> elem.closest("[data-foo]").dataset.foo
+		//Node.prototype.closest_data = function(attr) {return this.closest("[data-" + attr + "]").dataset[attr];};
+		Node.prototype.closest_data = function(attr) {
+			for (let el = this; el; el = el.parentNode) {
+				const val = el.dataset?.[attr];
+				//Note that "if (val)" would exclude those with a value of "", which we should retain.
+				if (typeof val === "string") return val;
+			}
+			return null;
+		};
+	}
 }
+export const fix_dialogs = apply_fixes; //Compatibility name from when it mostly just did dialog fixes
 
 //Compatibility hack for those attributes where not ret[attr] <=> ret.setAttribute(attr). Might be made externally mutable? Maybe?
 const attr_xlat = {classname: "class", htmlfor: "for"};
@@ -348,4 +363,6 @@ export default choc;
 export {choc, lindt};
 
 //For non-module scripts, allow some globals to be used. Also useful at the console.
-window.choc = choc; window.set_content = set_content; window.on = on; window.DOM = DOM; window.fix_dialogs = fix_dialogs;
+//Note that the old name fix_dialogs is used here, but neither name should be necessary
+//for modern browsers, and only some fixes are of value.
+window.choc = choc; window.set_content = set_content; window.on = on; window.DOM = DOM; window.fix_dialogs = apply_fixes;

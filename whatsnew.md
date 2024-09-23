@@ -1,5 +1,12 @@
 ## Chocolate Factory version history
 
+### vNext
+
+* fix_dialogs has been renamed to apply_fixes, with the old name retained for
+  compatibility.
+* New fix available: apply_fixes({methods: 1}) will add additional methods to
+  all DOM elements. Currently this provides one method, closest_data().
+
 ### v1.7.4
 
 * Bug fix: Calling replace_content with a non-matching selector will correctly
