@@ -1,6 +1,6 @@
 ## Chocolate Factory version history
 
-### vNext
+### v1.7.4
 
 * Bug fix: Calling replace_content with a non-matching selector will correctly
   throw an error.
