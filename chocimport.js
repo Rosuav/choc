@@ -303,6 +303,20 @@ const elements = {
 		//If we didn't find anything to assign to, it's probably landing at top-level. Warn?
 		scopes[0][name] = [el.right];
 	},
+
+	ClassDeclaration(el, state) {
+		descend(el.id, state);
+		descend(el.body, state);
+	},
+
+	ClassBody(el, state) {
+		descend(el.body, state);
+	},
+
+	MethodDefinition(el, state) {
+		descend(el.key, state);
+		descend(el.value, state);
+	},
 };
 
 //Names with spaces in them should be multiplexed. Replace the single entry with one for

@@ -4,6 +4,8 @@
 
 * Bug fix: Calling replace_content with a non-matching selector will correctly
   throw an error.
+* Importer feature: Class definitions and their methods are correctly parsed, and
+  will behave like other functions (including extcall).
 
 ### v1.7.3
 

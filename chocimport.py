@@ -288,6 +288,20 @@ def AssignmentExpression(el, *, scopes, sc, **kw):
 	# If we didn't find anything to assign to, it's probably landing at top-level. Warn?
 	scopes[0][name] = [el.right]
 
+@element
+def ClassDeclaration(el, **kw):
+	descend(el.id, **kw)
+	descend(el.body, **kw)
+
+@element
+def ClassBody(el, **kw):
+	descend(el.body, **kw)
+
+@element
+def MethodDefinition(el, **kw):
+	descend(el.key, **kw)
+	descend(el.value, **kw)
+
 def process(fn, *, fix=False, extcall=()):
 	Ctx.reset(fn)
 	if fn != "-":
