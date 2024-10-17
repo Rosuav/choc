@@ -97,7 +97,7 @@ const elements = {
 		descend(el.specifiers, state);
 	},
 
-	["ImportSpecifier ImportDefaultSpecifier"]: (el, {scopes}) => {
+	["ImportSpecifier ImportDefaultSpecifier ImportNamespaceSpecifier"]: (el, {scopes}) => {
 		//Mark that it's a known variable but don't attach any code to it
 		setdefault(scopes[scopes.length - 1], el.local.name, []);
 	},

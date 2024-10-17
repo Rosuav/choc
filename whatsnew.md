@@ -1,5 +1,8 @@
 ## Chocolate Factory version history
 
+### v1.8.1
+* Bugfix importers not recognizing "import * as name from ..." syntax
+
 ### v1.8.0
 
 * fix_dialogs has been renamed to apply_fixes, with the old name retained for

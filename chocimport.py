@@ -119,7 +119,7 @@ def ImportDeclaration(el, **kw):
 
 @element
 def ImportSpec(el, *, scopes, **kw):
-	"""ImportSpecifier ImportDefaultSpecifier"""
+	"""ImportSpecifier ImportDefaultSpecifier ImportNamespaceSpecifier"""
 	scopes[-1].setdefault(el.local.name, []) # Mark that it's a known variable but don't attach any code to it
 
 @element
