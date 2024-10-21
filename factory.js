@@ -238,7 +238,12 @@ export function replace_content(target, template) {
 			}
 			if (t instanceof Element) {
 				//DOM elements get passed through untouched, and removed from the template.
-				if (was[i] !== null) pristine = false;
+				//TODO: This previously only set pristine to false when was[i] wasn't null,
+				//allowing reuse of DOM elements to be more efficient. This however causes
+				//*replacement* of DOM elements to be ignored, which is a critical failure.
+				//It would be nice to reinstate the efficiency when reusing, without losing
+				//the correctness when replacing.
+				pristine = false;
 				now[i] = null;
 				++nodes;
 				return t;
@@ -356,7 +361,7 @@ function autobind(obj, prop) {
 choc = new Proxy(choc, {get: autobind});
 lindt = new Proxy(lindt, {get: autobind});
 
-choc.__version__ = "1.8.1";
+choc.__version__ = "1.8.2";
 
 //For modules, make the main entry-point easily available.
 export default choc;

@@ -1,5 +1,10 @@
 ## Chocolate Factory version history
 
+### v1.8.2
+* Bugfix use of DOM elements inside replace_content (can happen when mixing lindt
+  and choc). Previously it was possible for some such usage to result in elements
+  not being replaced when they should be.
+
 ### v1.8.1
 * Bugfix importers not recognizing "import * as name from ..." syntax
 
