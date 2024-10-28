@@ -361,7 +361,7 @@ function autobind(obj, prop) {
 choc = new Proxy(choc, {get: autobind});
 lindt = new Proxy(lindt, {get: autobind});
 
-choc.__version__ = "1.8.2";
+choc.__version__ = "1.8.3";
 
 //For modules, make the main entry-point easily available.
 export default choc;

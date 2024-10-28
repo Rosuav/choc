@@ -1,5 +1,8 @@
 ## Chocolate Factory version history
 
+### v1.8.3
+* Importer bugfix: `//extcall` now works on arrow functions (JS only)
+
 ### v1.8.2
 * Bugfix use of DOM elements inside replace_content (can happen when mixing lindt
   and choc). Previously it was possible for some such usage to result in elements

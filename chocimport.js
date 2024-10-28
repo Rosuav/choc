@@ -64,7 +64,7 @@ const elements = {
 	},
 
 	ArrowFunctionExpression(el, {scopes, sc, ...state}) {
-		if (sc === "return" && el.expression) //Braceless arrow functions implicitly return
+		if (el.expression && (sc === "return" || Ctx.source_lines[el.loc.start.line - 1].endsWith("//extcall"))) //Braceless arrow functions implicitly return
 			descend(el.body, {scopes: [...scopes, { }], sc: "set_content", ...state});
 		else elements.FunctionExpression(el, {scopes, sc, ...state});
 	},
