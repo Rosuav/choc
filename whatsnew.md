@@ -1,5 +1,8 @@
 ## Chocolate Factory version history
 
+### v1.9.2
+* Detect children inside arrays (out of context, that sounds nice and weird)
+
 ### v1.9.1
 * Oopsie, miscalculated the children...
 

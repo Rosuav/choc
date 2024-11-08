@@ -31,6 +31,12 @@ export function DOM(sel) {
 	return elems[0]; //Will return undefined if there are no matching elements.
 }
 
+function flatten_children(child, flat) { //Seriously, programmers are psychos
+	if (!child || child === "") return;
+	if (Array.isArray(child)) for (let c of child) flatten_children(c, flat);
+	else flat.push(child);
+}
+
 //Append one child or an array of children
 function append_child(elem, child) {
 	if (!child || child === "") return;
@@ -339,9 +345,13 @@ export function replace_content(target, template) {
 	//cases: the first N matching DOM elements will not be removed. TODO: Also check for the _last_ N
 	//matching elements, which will allow any single block of deletions/insertions.
 	let keep = 0;
-	while (keep < content.length && content[keep] instanceof Node && target.childNodes[keep] === content[keep]) ++keep;
+	//First, flatten the array. This matching is done without regard to subarray nesting level; during
+	//the main lindt scan, subarrays are retained as useful clues, but here they are irrelevant.
+	const flat = [];
+	flatten_children(content, flat);
+	while (keep < flat.length && flat[keep] instanceof Node && target.childNodes[keep] === flat[keep]) ++keep;
 	while (target.childNodes.length > keep) target.removeChild(target.lastChild);
-	append_child(target, content.slice(keep));
+	append_child(target, flat.slice(keep));
 	return target;
 }
 
@@ -369,7 +379,7 @@ function autobind(obj, prop) {
 choc = new Proxy(choc, {get: autobind});
 lindt = new Proxy(lindt, {get: autobind});
 
-choc.__version__ = "1.9.1";
+choc.__version__ = "1.9.2";
 
 //For modules, make the main entry-point easily available.
 export default choc;
