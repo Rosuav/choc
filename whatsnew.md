@@ -1,5 +1,8 @@
 ## Chocolate Factory version history
 
+### v1.9.1
+* Oopsie, miscalculated the children...
+
 ### v1.9.0
 * In Lindt mode, appending new children to a DOM element will not cause existing
   elements to be removed and reinserted unnecessarily.
