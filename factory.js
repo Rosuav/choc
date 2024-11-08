@@ -334,7 +334,15 @@ export function replace_content(target, template) {
 		if (t && typeof t === "object" && !Array.isArray(t) && !t.river) pristine = false;
 	});
 	if (pristine) return target;
-	return set_content(target, content);
+	//At this point, we could just "return set_content(target, content);" but this would unnecessarily
+	//remove and reinsert DOM elements. This next step is far from perfect but will cope with common
+	//cases: the first N matching DOM elements will not be removed. TODO: Also check for the _last_ N
+	//matching elements, which will allow any single block of deletions/insertions.
+	let keep = 0;
+	while (keep < content.length && content[keep] instanceof Node && target.children[keep] === content[keep]) ++keep;
+	while (target.children.length > keep) target.removeChild(target.lastChild);
+	append_child(target, content.slice(keep));
+	return target;
 }
 
 //TODO: Unify lindt and choc. Maybe have choc call lindt and then render?
@@ -361,7 +369,7 @@ function autobind(obj, prop) {
 choc = new Proxy(choc, {get: autobind});
 lindt = new Proxy(lindt, {get: autobind});
 
-choc.__version__ = "1.8.3";
+choc.__version__ = "1.9.0";
 
 //For modules, make the main entry-point easily available.
 export default choc;
