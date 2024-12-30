@@ -1,5 +1,8 @@
 ## Chocolate Factory version history
 
+### v1.9.3
+* Augment the "non-Node object" error if it looks like a Lindt template
+
 ### v1.9.2
 * Detect children inside arrays (out of context, that sounds nice and weird)
 

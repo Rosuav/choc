@@ -47,6 +47,11 @@ function append_child(elem, child) {
 	}
 	if (typeof child === "string" || typeof child === "number") child = document.createTextNode(child);
 	if (child instanceof Node) elem.appendChild(child);
+	else if (child.tag && child.attributes && Array.isArray(child.children))
+		//It looks like a Lindt template. We can't just bounce to replace_content though as we might be
+		//inside an array; otherwise, this check could be done in set_content and the two get unified.
+		throw new Error("Attempted to insert non-Node object into document - did you mean replace_content?",
+			{cause: {elem, child}});
 	else throw new Error("Attempted to insert non-Node object into document",
 		{cause: {elem, child}});
 }
@@ -379,7 +384,7 @@ function autobind(obj, prop) {
 choc = new Proxy(choc, {get: autobind});
 lindt = new Proxy(lindt, {get: autobind});
 
-choc.__version__ = "1.9.2";
+choc.__version__ = "1.9.3";
 
 //For modules, make the main entry-point easily available.
 export default choc;
