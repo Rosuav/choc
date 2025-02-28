@@ -149,7 +149,8 @@ const elements = {
 					}
 					scopes.pop();
 				}
-				if (funcname === funcname.toUpperCase()) {
+				//Note that a NewExpression will never be a Choc Factory call
+				if (funcname === funcname.toUpperCase() && el.type === "CallExpression") {
 					if (xmlns) {
 						const fn = NAMESPACE_XFRM[xmlns];
 						Ctx.want_imports[funcname] = '"' + xmlns + ':' + (fn ? fn(funcname) : funcname) + '"';

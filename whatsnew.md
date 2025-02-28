@@ -1,5 +1,10 @@
 ## Chocolate Factory version history
 
+### v1.9.4
+* Importer: Constructor calls eg "new URL(...)" will no longer be considered
+  to be Choc Factory calls. Should prevent URL from being added as an import,
+  shadowing the actual type.
+
 ### v1.9.3
 * Augment the "non-Node object" error if it looks like a Lindt template
 

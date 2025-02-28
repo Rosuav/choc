@@ -1,6 +1,6 @@
 {
 	"name": "chocfactory",
-	"version": "1.9.3",
+	"version": "1.9.4",
 	"description": "Simple JS front end library",
 	"main": "factory.js",
 	"scripts": {

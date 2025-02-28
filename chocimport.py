@@ -157,7 +157,8 @@ def Call(el, *, scopes, sc, **kw):
 					# will quickly return.)
 					descend(scope[funcname], scopes=scopes[:1], sc="return", **kw)
 					return
-			if funcname.isupper():
+			# Note that a NewExpression will never be a Choc Factory call
+			if funcname.isupper() and el.type == "CallExpression":
 				if xmlns:
 					fn = NAMESPACE_XFRM.get(xmlns)
 					Ctx.want_imports[funcname] = '"' + xmlns + ':' + (fn(funcname) if fn else funcname) + '"';
