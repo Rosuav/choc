@@ -34,7 +34,11 @@ import esprima # ImportError? pip install -r requirements.txt
 
 DOM_ADDITION_METHODS = ("appendChild", "before", "after", "append", "prepend", "insertBefore", "replaceWith")
 DEFAULT_NAMESPACES = {"SVG": "svg"}
-NAMESPACE_XFRM = {"svg": lambda fn: fn.lower()}
+# SVGs need correct letter casing. For most, this is simply lowercase (RECT -> svg:rect),
+# but for multi-word names, lowercase the first word, then titlecase, so FE_GAUSSIAN_BLUR
+# becomes svg:feGaussianBlur. Rather than differentiate the first word, we stick a letter
+# on the front and then slice it off.
+NAMESPACE_XFRM = {"svg": lambda fn: ("x" + fn).title()[1:].replace("_", "")}
 
 class Ctx:
 	@classmethod

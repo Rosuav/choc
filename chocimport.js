@@ -35,7 +35,10 @@ import fs from "node:fs";
 
 const DOM_ADDITION_METHODS = {appendChild:1, before:1, after:1, append:1, prepend: 1, insertBefore:1, replaceWith:1};
 const DEFAULT_NAMESPACES = {SVG: "svg"};
-const NAMESPACE_XFRM = {svg: fn => fn.toLowerCase()};
+//SVGs need correct letter casing. For most, this is simply lowercase (RECT -> svg:rect),
+//but for multi-word names, lowercase the first word, then titlecase, so FE_GAUSSIAN_BLUR
+//becomes svg:feGaussianBlur.
+const NAMESPACE_XFRM = {svg: fn => fn.split("_").map((w, i) => i ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()).join("")};
 
 const Ctx = {
 	reset(fn="-") {

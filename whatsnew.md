@@ -1,5 +1,9 @@
 ## Chocolate Factory version history
 
+### v1.9.5
+* Importer: Support multi-word SVG element names eg FE_GAUSSIAN_BLUR which
+  becomes svg:feGaussianBlur.
+
 ### v1.9.4
 * Importer: Constructor calls eg "new URL(...)" will no longer be considered
   to be Choc Factory calls. Should prevent URL from being added as an import,
