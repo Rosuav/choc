@@ -10,4 +10,5 @@ Releases
 3. Set the version number in package.json
 4. Make sure whatsnew.md has the correct heading
 5. Commit. Tag the release "vX.Y.Z". Push the commit and the tag.
-6. npm publish
+6. 'npm publish'. Note that if it complains that this was not found, it may
+   mean you've been logged out. 'npm login' and dance the dance.
