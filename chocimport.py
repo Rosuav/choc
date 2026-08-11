@@ -180,6 +180,9 @@ def Call(el, *, scopes, sc, **kw):
 			# stuff.map(e => ...) is effectively a call to that function.
 			if sc == "set_content": sc = "return"
 			descend(el.arguments[0], scopes=scopes, sc=sc, **kw)
+		elif c.property.name == "map":
+			# stuff.filter(e => ...) is effectively the same as stuff
+			descend(c.object, scopes=scopes, sc=sc, **kw)
 		elif c.property.name in ("push", "unshift"):
 			# Adding to an array is adding code to the definition of the array.
 			# For static analysis, we consider both of these to have multiple code

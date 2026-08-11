@@ -1,5 +1,9 @@
 ## Chocolate Factory version history
 
+### v1.9.6
+* Importer: Recognize some_array.filter(e => cond) as broadly equivalent to
+  the original array.
+
 ### v1.9.5
 * Importer: Support multi-word SVG element names eg FE_GAUSSIAN_BLUR which
   becomes svg:feGaussianBlur.

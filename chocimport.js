@@ -178,6 +178,9 @@ const elements = {
 			else if (c.property.name === "map")
 				//stuff.map(e => ...) is effectively a call to that function.
 				descend(el.arguments[0], {scopes, sc: sc === "set_content" ? "return" : sc, ...state});
+			else if (c.property.name === "filter")
+				//stuff.filter(e => ...) is effectively the same as stuff
+				descend(c.object, {scopes, sc, ...state});
 			else if (c.property.name === "push" || c.property.name === "unshift") {
 				//Adding to an array is adding code to the definition of the array.
 				//For static analysis, we consider both of these to have multiple code
